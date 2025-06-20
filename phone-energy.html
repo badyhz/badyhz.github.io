@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机号码能量分析系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 100%;
+            margin: 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.5;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-top: 0;
+            text-align: center;
+        }
+        input {
+            padding: 12px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        .energy-level {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+        .first-level {
+            background-color: rgba(255, 205, 210, 0.3);
+            border-left-color: #f44336;
+        }
+        .second-level {
+            background-color: rgba(248, 187, 208, 0.3);
+            border-left-color: #e91e63;
+        }
+        .third-level {
+            background-color: rgba(225, 190, 231, 0.3);
+            border-left-color: #9c27b0;
+        }
+        .fourth-level {
+            background-color: rgba(209, 196, 233, 0.3);
+            border-left-color: #673ab7;
+        }
+        .unknown-level {
+            background-color: rgba(197, 202, 233, 0.3);
+            border-left-color: #3f51b5;
+        }
+        .combination {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: rgba(232, 245, 233, 0.5);
+            border-radius: 8px;
+            border-left: 3px solid #4CAF50;
+        }
+        .section-title {
+            margin: 25px 0 15px 0;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: bold;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .combination-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .combination-content {
+            padding: 8px 0;
+            color: #555;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 30px;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>手机号码能量分析系统</h1>
+        <p>请输入11位手机号码：</p>
+        <input type="tel" id="phoneNumber" placeholder="例如：13434434911" maxlength="11" pattern="\d{11}" inputmode="numeric">
+        <button onclick="analyzePhoneNumber()">分析能量</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 数字到能量类型的映射（0和5设为未知）
+        const digitToEnergy = {
+            '1': '生气',
+            '2': '绝命',
+            '3': '天医',
+            '4': '生气',
+            '5': '未知',
+            '6': '六煞',
+            '7': '祸害',
+            '8': '延年',
+            '9': '五鬼',
+            '0': '未知'
+        };
+
+        // 能量等级规则（第一层逻辑）
+        const energyLevelRules = {
+            '伏位': { '一级': ['11', '22'], '二级': ['88', '99'], '三级': ['66', '77'], '四级': ['33', '44'] },
+            '绝命': { '一级': ['12', '21'], '二级': ['96', '69'], '三级': ['48', '84'], '四级': ['37', '73'] },
+            '天医': { '一级': ['13', '31'], '二级': ['86', '68'], '三级': ['49', '94'], '四级': ['27', '72'] },
+            '生气': { '一级': ['14', '41'], '二级': ['76', '67'], '三级': ['39', '93'], '四级': ['28', '82'] },
+            '六煞': { '一级': ['16', '61'], '二级': ['47', '74'], '三级': ['38', '83'], '四级': ['29', '92'] },
+            '祸害': { '一级': ['17', '71'], '二级': ['89', '98'], '三级': ['46', '64'], '四级': ['23', '32'] },
+            '五鬼': { '一级': ['18', '81'], '二级': ['79', '97'], '三级': ['63', '36'], '四级': ['24', '42'] },
+            '延年': { '一级': ['19', '91'], '二级': ['78', '87'], '三级': ['34', '43'], '四级': ['26', '62'] }
+        };
+
+        // 能量组合解释表（严格按照顺序1→顺序2的关系）
+        const energyCombinationExplanations = {
+            '生气': {
+                '生气': '汇集增强的贵人能量',
+                '天医': '通过贵人而带来财富',
+                '延年': '工作后很开心，没有感到多大的压力',
+                '伏位': '生气磁场得到延续',
+                '六煞': '人缘好，对人热情，有好的人际关系',
+                '祸害': '口才好，能说出有价值的话说得让人动听让人喜欢',
+                '五鬼': '动头脑，能想到好的点子，先进的方案',
+                '绝命': '拼得很开心'
+            },
+            '天医': {
+                '生气': '懂朋友，对朋友大方，人缘好，花不少钱在朋友们身上',
+                '天医': '汇集增强的财富能量，且有婚姻现象',
+                '延年': '靠自己的专业能力赚钱，延年大天医小，工作辛苦收获少，延年小天医大轻松赚大钱',
+                '伏位': '通过耐心的坚持及等待而创造更大的财富',
+                '六煞': '通过服务行业而赚钱，需要细心的工作',
+                '祸害': '通过口才而赚钱，销售演讲、主持等工作',
+                '五鬼': '通过才华点子而赚钱，需要强度灵活活动脑的工作',
+                '绝命': '通过拼搏努力而赚钱或搞投资理财'
+            },
+            '延年': {
+                '生气': '工作后很开心，没有感到多大的压力',
+                '天医': '靠自己的专业能力赚钱',
+                '伏位': '努力去做事并且是被动地去做',
+                '六煞': '工作做的不开心，常忧郁，不果决',
+                '祸害': '会不断发生流言蜝语，领导能力上产生挫折，权力受到威胁，做的事易后悔',
+                '绝命': '工作不想干了，工作上大多波折，感情不好，人际关系不好'
+            },
+            '伏位': {
+                '生气': '蓄势生气能量，让生气变得更强大有力',
+                '天医': '通过耐心的坚持及等待而创造更大的财富',
+                '延年': '努力去做事并且是被动地去做',
+                '伏位': '蓄势待发增强伏位势力，伏位磁场得到延续',
+                '六煞': '蓄势待发，增强六煞势力',
+                '祸害': '铁齿钢牙，自以为是',
+                '绝命': '蓄势待发，不冲而己，一冲冲天，工作上非常拼'
+            },
+            '六煞': {
+                '生气': '人缘上交际，八面玲珑',
+                '天医': '易因女性破财，偏桃花，影响婚姻感情',
+                '伏位': '蓄势待发，增强六煞势力',
+                '六煞': '增强忧郁感，情绪不稳定，人际关系会突然恶化，偏桃花',
+                '祸害': '讲出话得不到回应，让人纳闷无语，情绪不好',
+                '绝命': '拼得很忧郁，没有激情'
+            },
+            '祸害': {
+                '生气': '自认为很好的东西，讲出来却遭到议论纷纷',
+                '天医': '爱花钱，爱面子，爱买吃的，总想买好的',
+                '伏位': '铁齿钢牙，自以为是',
+                '六煞': '没有心情讲话，讲的话容易得罪人',
+                '祸害': '说话直接，招口舌是非，嘴硬，争吵，脾气暴躁，气短，没有耐心',
+                '绝命': '主动没事找事儿，寻衅滋事'
+            },
+            '五鬼': {
+                '生气': '动头脑，能想到好的点子，先进的方案',
+                '天医': '通过才华点子而赚钱，需要强度灵活活动脑的工作',
+                '伏位': '五鬼磁场得到延续',
+                '六煞': '想法很纳闷，没有用处',
+                '祸害': '变着花样的招口舌是非',
+                '绝命': '懂得去抓住好的商机，而去努力实现，敢拼的人生，但高能量的组合易引发癌症'
+            },
+            '绝命': {
+                '生气': '很开心的拼搏为了伟大梦理，但不一定能实现',
+                '天医': '有钱就会投资，思考不周全，易冲动而导致破财',
+                '伏位': '蓄势待发，不冲而己，一冲冲天，工作上非常拼',
+                '六煞': '带情绪的辛苦努力',
+                '祸害': '讲话会很冲动，最容易讲话伤人',
+                '绝命': '拼得很辛苦，但可能事倍功半'
+            }
+        };
+
+        function analyzePhoneNumber() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            // 清空之前的结果
+            resultDiv.innerHTML = '';
+            
+            if (!phoneNumber) {
+                resultDiv.innerHTML = "<p style='color:red;padding:10px;'>请输入手机号码</p>";
+                return;
+            }
+            
+            if (!/^\d{11}$/.test(phoneNumber)) {
+                resultDiv.innerHTML = "<p style='color:red;padding:10px;'>请输入有效的11位手机号码</p>";
+                return;
+            }
+            
+            // 第一层分析：能量等级
+            const levelResults = analyzeEnergyLevels(phoneNumber);
+            
+            // 第二层分析：能量组合解释
+            const combinationResults = analyzeEnergyCombinations(levelResults);
+            
+            // 显示结果
+            displayResults(phoneNumber, levelResults, combinationResults);
+        }
+        
+        function analyzeEnergyLevels(phoneNumber) {
+            const results = [];
+            
+            // 检查号码中的每两个连续数字
+            for (let i = 0; i < phoneNumber.length - 1; i++) {
+                const twoDigits = phoneNumber.substring(i, i + 2);
+                
+                // 如果包含0或5，则设为未知
+                if (twoDigits.includes('0') || twoDigits.includes('5')) {
+                    results.push({
+                        type: '未知',
+                        level: '未知',
+                        combination: twoDigits,
+                        position: `${i + 1}-${i + 2}`,
+                        levelClass: 'unknown-level'
+                    });
+                    continue;
+                }
+                
+                for (const [type, levels] of Object.entries(energyLevelRules)) {
+                    for (const [level, combinations] of Object.entries(levels)) {
+                        if (combinations.includes(twoDigits)) {
+                            results.push({
+                                type: type,
+                                level: level,
+                                combination: twoDigits,
+                                position: `${i + 1}-${i + 2}`,
+                                levelClass: getLevelClass(level)
+                            });
+                        }
+                    }
+                }
+            }
+            
+            return results;
+        }
+        
+        function analyzeEnergyCombinations(levelResults) {
+            const results = [];
+            
+            // 根据第一层逻辑的结果进行组合分析
+            for (let i = 0; i < levelResults.length - 1; i++) {
+                const current = levelResults[i];
+                const next = levelResults[i + 1];
+                
+                const energy1 = current.type;
+                const energy2 = next.type;
+                
+                // 如果任一能量类型为未知，则组合解释为未知
+                if (energy1 === '未知' || energy2 === '未知') {
+                    results.push({
+                        energy1: energy1,
+                        energy2: energy2,
+                        level1: current.level,
+                        level2: next.level,
+                        combination1: current.combination,
+                        combination2: next.combination,
+                        explanation: '未知',
+                        position: `${current.position} → ${next.position}`,
+                        levelClass: 'unknown-level'
+                    });
+                    continue;
+                }
+                
+                // 严格按顺序1→顺序2查找解释
+                let explanation = '未知';
+                if (energyCombinationExplanations[energy1] && energyCombinationExplanations[energy1][energy2]) {
+                    explanation = energyCombinationExplanations[energy1][energy2];
+                }
+                
+                results.push({
+                    energy1: energy1,
+                    energy2: energy2,
+                    level1: current.level,
+                    level2: next.level,
+                    combination1: current.combination,
+                    combination2: next.combination,
+                    explanation: explanation,
+                    position: `${current.position} → ${next.position}`,
+                    levelClass: getLevelClass(current.level)
+                });
+            }
+            
+            return results;
+        }
+        
+        function displayResults(phoneNumber, levelResults, combinationResults) {
+            const resultDiv = document.getElementById('result');
+            
+            let resultHTML = `<h3 style="text-align:center;margin-bottom:20px;">分析结果：${phoneNumber}</h3>`;
+            
+            // 先显示能量组合解释（第二层逻辑）
+            resultHTML += `<div class="section-title">能量组合解释</div>`;
+            if (combinationResults.length > 0) {
+                combinationResults.forEach(result => {
+                    const levelInfo1 = `${result.energy1} (${result.level1} ${result.combination1})`;
+                    const levelInfo2 = `${result.energy2} (${result.level2} ${result.combination2})`;
+                    
+                    resultHTML += `
+                    <div class="combination">
+                        <div class="combination-title">${levelInfo1} → ${levelInfo2}</div>
+                        <div class="combination-content">${result.explanation}</div>
+                    </div>`;
+                });
+            } else {
+                resultHTML += `<p style="padding:10px;">未检测到能量组合</p>`;
+            }
+            
+            // 后显示能量等级分析（第一层逻辑）
+            resultHTML += `<div class="section-title">能量等级分析</div>`;
+            if (levelResults.length > 0) {
+                levelResults.forEach(result => {
+                    resultHTML += `<div class="energy-level ${result.levelClass}">
+                        <strong>${result.type} - ${result.level}影响 (${result.combination})</strong> (位置 ${result.position})
+                    </div>`;
+                });
+            } else {
+                resultHTML += `<p style="padding:10px;">未检测到显著能量等级组合</p>`;
+            }
+            
+            resultDiv.innerHTML = resultHTML;
+            
+            // 滚动到结果区域
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function getLevelClass(level) {
+            switch(level) {
+                case '一级': return 'first-level';
+                case '二级': return 'second-level';
+                case '三级': return 'third-level';
+                case '四级': return 'fourth-level';
+                default: return 'unknown-level';
+            }
+        }
+    </script>
+</body>
+</html>
