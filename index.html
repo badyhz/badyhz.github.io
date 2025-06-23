@@ -106,6 +106,24 @@
             padding: 8px 0;
             color: #555;
         }
+        .summary-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(227, 242, 253, 0.5);
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        .summary-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .summary-item {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+        }
 
         @media (min-width: 768px) {
             body {
@@ -182,7 +200,7 @@
                 '天医': '靠自己的专业能力赚钱',
                 '伏位': '努力去做事并且是被动地去做',
                 '六煞': '工作做的不开心，常忧郁，不果决',
-                '祸害': '会不断发生流言蜝语，领导能力上产生挫折，权力受到威胁，做的事易后悔',
+                '祸害': '会不断发生流言蜝蜝语，领导能力上产生挫折，权力受到威胁，做的事易后悔',
                 '绝命': '工作不想干了，工作上大多波折，感情不好，人际关系不好'
             },
             '伏位': {
@@ -251,8 +269,11 @@
             // 第二层分析：能量组合解释
             const combinationResults = analyzeEnergyCombinations(levelResults);
             
+            // 统计能量组合解释
+            const explanationStats = getExplanationStatistics(combinationResults);
+            
             // 显示结果
-            displayResults(phoneNumber, levelResults, combinationResults);
+            displayResults(phoneNumber, levelResults, combinationResults, explanationStats);
         }
         
         function analyzeEnergyLevels(phoneNumber) {
@@ -341,12 +362,42 @@
             return results;
         }
         
-        function displayResults(phoneNumber, levelResults, combinationResults) {
+        function getExplanationStatistics(combinationResults) {
+            const stats = {};
+            
+            combinationResults.forEach(result => {
+                if (result.explanation && result.explanation !== '未知') {
+                    if (!stats[result.explanation]) {
+                        stats[result.explanation] = 0;
+                    }
+                    stats[result.explanation]++;
+                }
+            });
+            
+            return stats;
+        }
+        
+        function displayResults(phoneNumber, levelResults, combinationResults, explanationStats) {
             const resultDiv = document.getElementById('result');
             
             let resultHTML = `<h3 style="text-align:center;margin-bottom:20px;">分析结果：${phoneNumber}</h3>`;
             
-            // 先显示能量组合解释（第二层逻辑）
+            // 显示统计结果
+            resultHTML += `<div class="section-title">能量组合统计</div>`;
+            if (Object.keys(explanationStats).length > 0) {
+                resultHTML += `<div class="summary-section">`;
+                resultHTML += `<div class="summary-title">能量组合出现次数统计：</div>`;
+                
+                for (const [explanation, count] of Object.entries(explanationStats)) {
+                    resultHTML += `<div class="summary-item">${explanation} ×${count}</div>`;
+                }
+                
+                resultHTML += `</div>`;
+            } else {
+                resultHTML += `<p style="padding:10px;">未检测到可统计的能量组合</p>`;
+            }
+            
+            // 显示能量组合解释（第二层逻辑）
             resultHTML += `<div class="section-title">能量组合解释</div>`;
             if (combinationResults.length > 0) {
                 combinationResults.forEach(result => {
@@ -363,7 +414,7 @@
                 resultHTML += `<p style="padding:10px;">未检测到能量组合</p>`;
             }
             
-            // 后显示能量等级分析（第一层逻辑）
+            // 显示能量等级分析（第一层逻辑）
             resultHTML += `<div class="section-title">能量等级分析</div>`;
             if (levelResults.length > 0) {
                 levelResults.forEach(result => {
