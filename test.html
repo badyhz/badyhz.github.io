@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,35 +12,42 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #333;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             text-align: center;
             padding: 30px 20px;
         }
         h1 {
             font-size: 2.2em;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .subtitle {
-            font-size: 1.1em;
+            font-size: 1em;
             opacity: 0.9;
         }
         .content {
-            padding: 30px;
+            padding: 30px 20px;
+        }
+        .page {
+            display: none; /* 默认隐藏所有页面 */
+        }
+        .page.active {
+            display: block; /* 显示当前活动页面 */
         }
         .progress {
             height: 4px;
@@ -56,53 +63,61 @@
             transition: width 0.3s ease;
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #2c3e50;
             font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 1.1em;
         }
         .date-input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: border-color 0.3s ease;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
         }
         .date-input:focus {
             outline: none;
             border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
         }
         .question {
             background: #f8f9ff;
             padding: 20px;
             border-radius: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
             border-left: 4px solid #4facfe;
+            transition: transform 0.2s ease;
+        }
+        .question:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .question h3 {
-            font-size: 1.1em;
             color: #2c3e50;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
         }
         .options {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            gap: 15px;
+            margin-top: 12px;
         }
         .option {
+            flex: 1;
+            padding: 10px 12px;
             background: white;
             border: 2px solid #e9ecef;
             border-radius: 8px;
-            padding: 12px 10px;
             cursor: pointer;
-            font-size: 1em;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.95em;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
         }
         .option:hover {
             border-color: #4facfe;
@@ -113,148 +128,6 @@
             background: #e3f2fd;
             color: #1976d2;
             font-weight: 600;
-        }
-        .submit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            font-size: 1.1em;
-            border-radius: 40px;
-            cursor: pointer;
-            display: block;
-            margin: 25px auto 0;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-            width: 100%;
-        }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 20px rgba(102, 126, 234, 0.4);
-        }
-        .submit-btn:active {
-            transform: translateY(0);
-        }
-        .back-btn {
-            background: #6c757d;
-            box-shadow: 0 8px 16px rgba(108, 117, 125, 0.3);
-        }
-        .back-btn:hover {
-            background: #5a6268;
-        }
-        .results {
-            padding: 18px;
-            margin-top: 20px;
-        }
-        .results h2 {
-            font-size: 1.4em;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .result-item {
-            background: #f8f9ff;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border-left: 4px solid #4facfe;
-        }
-        .result-item h3 {
-            font-size: 1.1em;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-        }
-        .result-item h3 i {
-            margin-right: 8px;
-            font-size: 1.1em;
-        }
-        .bar-container {
-            height: 18px;
-            background: #e9ecef;
-            border-radius: 9px;
-            margin: 10px 0;
-            overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4facfe, #00f2fe);
-            text-align: center;
-            color: white;
-            line-height: 18px;
-            font-size: 0.8em;
-            font-weight: 500;
-            transition: width 1.5s ease-in-out;
-        }
-        .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .tag {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 0.85em;
-            font-weight: 500;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .dimension-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 0.85em;
-        }
-        .dimension-table th, .dimension-table td {
-            padding: 6px 8px;
-            text-align: center;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .dimension-table th {
-            background: #4facfe;
-            color: white;
-            font-weight: 600;
-        }
-        .dimension-table tr:nth-child(even) {
-            background: #f8f9ff;
-        }
-        .special-mechanism {
-            padding: 8px;
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            border-radius: 0 8px 8px 0;
-        }
-        .special-mechanism h4 {
-            font-size: 0.95em;
-            color: #856404;
-            margin-bottom: 4px;
-        }
-        .special-mechanism p {
-            font-size: 0.85em;
-            color: #856404;
-        }
-        /* 新增页面样式：后天与行为标签 */
-        .post-test-page {
-            display: none; /* 默认隐藏 */
-            padding: 20px;
-        }
-        .post-test-header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .post-test-header h2 {
-            font-size: 1.8em;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .post-test-header p {
-            color: #666;
-            font-size: 1em;
         }
         .tag-section {
             background: #f8f9ff;
@@ -318,27 +191,250 @@
             color: white;
             border-color: #4facfe;
         }
-
-        /* 响应式设计 */
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 1.1em;
+            border-radius: 40px;
+            cursor: pointer;
+            display: block;
+            margin: 0;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+            width: 100%;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(102, 126, 234, 0.4);
+        }
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        .back-btn {
+            background: #6c757d;
+            box-shadow: 0 8px 16px rgba(108, 117, 125, 0.3);
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        .results {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 2px solid #e9ecef;
+        }
+        .results h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+        }
+        .result-item {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        }
+        .result-item h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .bar-container {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            text-align: center;
+            color: white;
+            line-height: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: width 1.5s ease-in-out;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .tag {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.85em;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .dimension-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.9em;
+        }
+        .dimension-table th {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            text-align: left;
+            padding: 10px;
+            font-weight: 600;
+        }
+        .dimension-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .dimension-table tr:nth-child(even) {
+            background-color: #f8f9ff;
+        }
+        .high-score {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+        .low-score {
+            color: #1976d2;
+            font-weight: 600;
+        }
+        .special-mechanism {
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border-left: 3px solid #4caf50;
+        }
+        .special-mechanism h4 {
+            color: #2e7d32;
+            margin-bottom: 6px;
+            font-size: 0.95em;
+        }
+        .special-mechanism p {
+            color: #388e3c;
+            font-size: 0.85em;
+            margin: 0;
+        }
+        /* 平板适配 */
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
-                border-radius: 12px;
-            }
-            .content {
-                padding: 20px;
+                border-radius: 15px;
             }
             header {
-                padding: 20px 15px;
+                padding: 25px 15px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .subtitle {
+                font-size: 0.95em;
+            }
+            .content {
+                padding: 25px 15px;
+            }
+            .question {
+                padding: 18px;
+                margin-bottom: 15px;
+            }
+            .question h3 {
+                font-size: 1.15em;
+            }
+            .options {
+                gap: 12px;
+            }
+            .option {
+                padding: 9px 10px;
+                font-size: 0.9em;
+            }
+            .submit-btn {
+                padding: 13px 25px;
+                font-size: 1em;
+            }
+            .results {
+                padding: 20px;
+                margin-top: 20px;
+            }
+            .results h2 {
+                font-size: 1.5em;
+            }
+            .result-item {
+                padding: 14px;
+            }
+            .result-item h3 {
+                font-size: 1.15em;
+            }
+            .bar-container {
+                height: 18px;
+            }
+            .bar {
+                line-height: 18px;
+                font-size: 0.8em;
+            }
+            .tags {
+                gap: 6px;
+            }
+            .tag {
+                padding: 5px 10px;
+                font-size: 0.8em;
+            }
+            .dimension-table {
+                font-size: 0.85em;
+            }
+            .dimension-table th, .dimension-table td {
+                padding: 6px 8px;
+            }
+            .special-mechanism {
+                padding: 8px;
+            }
+            .special-mechanism h4 {
+                font-size: 0.95em;
+            }
+            .progress {
+                height: 4px;
+                margin: 15px 0;
+            }
+        }
+        /* 手机适配 */
+        @media (max-width: 480px) {
+            body {
+                padding: 15px 10px;
+            }
+            .container {
+                margin: 5px;
+                border-radius: 12px;
+            }
+            header {
+                padding: 20px 10px;
             }
             h1 {
                 font-size: 1.8em;
             }
             .subtitle {
-                font-size: 0.95em;
+                font-size: 0.9em;
+            }
+            .content {
+                padding: 20px 10px;
             }
             .question {
-                padding: 16px;
+                padding: 15px;
+                margin-bottom: 15px;
             }
             .question h3 {
                 font-size: 1.1em;
@@ -400,7 +496,6 @@
                 margin: 15px 0;
             }
         }
-
         /* 小屏幕特殊优化 */
         @media (max-width: 360px) {
             body {
@@ -465,7 +560,7 @@
         </header>
         <div class="content">
             <!-- 第一页：性格测试 -->
-            <form id="personality-form" class="active-page">
+            <div id="test-page" class="page active">
                 <div class="progress">
                     <div class="progress-bar" id="progress-bar"></div>
                 </div>
@@ -474,13 +569,14 @@
                     <input type="date" id="dob" class="date-input" required>
                 </div>
                 <div id="questions-container">
-                    <!-- 问题将通过JavaScript动态生成 -->
+                    <!-- 40道问题将通过JavaScript动态生成 -->
                 </div>
-                <button type="button" id="nextToPostTestBtn" class="submit-btn">进入下一步</button>
-            </form>
-
-            <!-- 新增页面：后天与行为标签 -->
-            <div id="post-test-page" class="post-test-page">
+                <div class="btn-group">
+                    <button type="button" id="nextToPostTestBtn" class="submit-btn">进入下一步</button>
+                </div>
+            </div>
+            <!-- 第二页：后天与行为标签 -->
+            <div id="post-test-page" class="page">
                 <div class="post-test-header">
                     <h2>完善你的个人画像</h2>
                     <p>请选择以下标签，让分析更精准</p>
@@ -631,147 +727,60 @@
                             <div class="tag-option" data-tag="群内潜水">群内潜水</div>
                         </div>
                     </div>
-                    <div class="tag-group">
-                        <h3><i>💪</i> 健康习惯</h3>
-                        <div class="tag-options" id="health-options">
-                            <div class="tag-option" data-tag="健身狂人">健身狂人</div>
-                            <div class="tag-option" data-tag="养生达人">养生达人</div>
-                            <div class="tag-option" data-tag="烟酒不沾">烟酒不沾</div>
-                            <div class="tag-option" data-tag="咖啡依赖">咖啡依赖</div>
-                            <div class="tag-option" data-tag="素食主义">素食主义</div>
-                            <div class="tag-option" data-tag="规律作息">规律作息</div>
-                            <div class="tag-option" data-tag="医疗恐惧">医疗恐惧</div>
-                            <div class="tag-option" data-tag="运动新手">运动新手</div>
-                        </div>
-                    </div>
-                    <div class="tag-group">
-                        <h3><i>📚</i> 学习风格</h3>
-                        <div class="tag-options" id="learning-options">
-                            <div class="tag-option" data-tag="系统学习">系统学习</div>
-                            <div class="tag-option" data-tag="碎片学习">碎片学习</div>
-                            <div class="tag-option" data-tag="实践派">实践派</div>
-                            <div class="tag-option" data-tag="理论派">理论派</div>
-                            <div class="tag-option" data-tag="快速上手">快速上手</div>
-                            <div class="tag-option" data-tag="深度钻研">深度钻研</div>
-                            <div class="tag-option" data-tag="模仿学习">模仿学习</div>
-                            <div class="tag-option" data-tag="独立探索">独立探索</div>
-                        </div>
-                    </div>
-                    <div class="tag-group">
-                        <h3><i>🧘</i> 压力应对</h3>
-                        <div class="tag-options" id="stress-options">
-                            <div class="tag-option" data-tag="积极解决">积极解决</div>
-                            <div class="tag-option" data-tag="逃避现实">逃避现实</div>
-                            <div class="tag-option" data-tag="寻求支持">寻求支持</div>
-                            <div class="tag-option" data-tag="自我加压">自我加压</div>
-                            <div class="tag-option" data-tag="运动释放">运动释放</div>
-                            <div class="tag-option" data-tag="暴饮暴食">暴饮暴食</div>
-                            <div class="tag-option" data-tag="冷静分析">冷静分析</div>
-                            <div class="tag-option" data-tag="情绪爆发">情绪爆发</div>
-                        </div>
-                    </div>
-                    <div class="tag-group">
-                        <h3><i>🎨</i> 休闲偏好</h3>
-                        <div class="tag-options" id="leisure-options">
-                            <div class="tag-option" data-tag="户外探险">户外探险</div>
-                            <div class="tag-option" data-tag="宅家休息">宅家休息</div>
-                            <div class="tag-option" data-tag="电影迷">电影迷</div>
-                            <div class="tag-option" data-tag="游戏爱好者">游戏爱好者</div>
-                            <div class="tag-option" data-tag="阅读成瘾">阅读成瘾</div>
-                            <div class="tag-option" data-tag="社交聚会">社交聚会</div>
-                            <div class="tag-option" data-tag="艺术创作">艺术创作</div>
-                            <div class="tag-option" data-tag="旅行达人">旅行达人</div>
-                        </div>
-                    </div>
                 </div>
                 <div class="btn-group">
                     <button type="button" id="backToTestBtn" class="submit-btn back-btn">上一步</button>
                     <button type="button" id="submitFinalBtn" class="submit-btn">生成我的人格报告</button>
                 </div>
             </div>
-
-            <!-- 最终结果页面 -->
-            <div class="results hidden" id="results">
-                <h2>我的人格画像</h2>
+            <!-- 第三页：结果页 -->
+            <div id="results-page" class="page">
                 <div id="results-content">
                     <!-- 结果将通过JavaScript动态生成 -->
                 </div>
             </div>
         </div>
     </div>
-
     <script>
         // 四液质标签和评分规则
-        const temperamentTags = {
-            sanguine: [
-                { label: "社交", openness: 6, conscientiousness: 4, extraversion: 9, agreeableness: 7, neuroticism: 3 },
-                { label: "活泼", openness: 6, conscientiousness: 3, extraversion: 9, agreeableness: 6, neuroticism: 3 },
-                { label: "情绪波动", openness: 5, conscientiousness: 2, extraversion: 7, agreeableness: 5, neuroticism: 8 },
-                { label: "精力旺盛", openness: 5, conscientiousness: 5, extraversion: 9, agreeableness: 5, neuroticism: 3 },
-                { label: "乐观", openness: 7, conscientiousness: 4, extraversion: 8, agreeableness: 7, neuroticism: 2 },
-                { label: "健谈", openness: 5, conscientiousness: 3, extraversion: 9, agreeableness: 6, neuroticism: 4 },
-                { label: "随和", openness: 5, conscientiousness: 4, extraversion: 7, agreeableness: 8, neuroticism: 3 },
-                { label: "寻求刺激", openness: 8, conscientiousness: 3, extraversion: 8, agreeableness: 5, neuroticism: 5 }
-            ],
-            choleric: [
-                { label: "果断", openness: 5, conscientiousness: 8, extraversion: 8, agreeableness: 4, neuroticism: 5 },
-                { label: "领导力", openness: 6, conscientiousness: 8, extraversion: 9, agreeableness: 5, neuroticism: 4 },
-                { label: "野心", openness: 7, conscientiousness: 9, extraversion: 8, agreeableness: 3, neuroticism: 6 },
-                { label: "自信", openness: 6, conscientiousness: 6, extraversion: 8, agreeableness: 5, neuroticism: 3 },
-                { label: "竞争性", openness: 5, conscientiousness: 7, extraversion: 8, agreeableness: 3, neuroticism: 6 },
-                { label: "目标导向", openness: 5, conscientiousness: 9, extraversion: 7, agreeableness: 4, neuroticism: 4 },
-                { label: "急躁", openness: 4, conscientiousness: 5, extraversion: 7, agreeableness: 3, neuroticism: 7 },
-                { label: "支配性", openness: 5, conscientiousness: 7, extraversion: 8, agreeableness: 2, neuroticism: 6 }
-            ],
-            melancholic: [
-                { label: "敏感", openness: 7, conscientiousness: 6, extraversion: 2, agreeableness: 7, neuroticism: 9 },
-                { label: "温柔", openness: 5, conscientiousness: 5, extraversion: 3, agreeableness: 9, neuroticism: 6 },
-                { label: "封闭", openness: 6, conscientiousness: 5, extraversion: 1, agreeableness: 5, neuroticism: 7 },
-                { label: "共情", openness: 7, conscientiousness: 5, extraversion: 3, agreeableness: 9, neuroticism: 6 },
-                { label: "完美主义", openness: 6, conscientiousness: 9, extraversion: 3, agreeableness: 6, neuroticism: 8 },
-                { label: "深思熟虑", openness: 8, conscientiousness: 8, extraversion: 2, agreeableness: 6, neuroticism: 5 },
-                { label: "悲观", openness: 5, conscientiousness: 6, extraversion: 2, agreeableness: 7, neuroticism: 9 },
-                { label: "理想主义", openness: 9, conscientiousness: 5, extraversion: 3, agreeableness: 7, neuroticism: 7 }
-            ],
-            phlegmatic: [
-                { label: "冷静", openness: 4, conscientiousness: 7, extraversion: 4, agreeableness: 8, neuroticism: 2 },
-                { label: "耐心", openness: 4, conscientiousness: 8, extraversion: 3, agreeableness: 9, neuroticism: 3 },
-                { label: "稳定", openness: 3, conscientiousness: 8, extraversion: 4, agreeableness: 8, neuroticism: 2 },
-                { label: "可靠", openness: 3, conscientiousness: 9, extraversion: 3, agreeableness: 8, neuroticism: 2 },
-                { label: "平和", openness: 4, conscientiousness: 6, extraversion: 4, agreeableness: 9, neuroticism: 1 },
-                { label: "规律", openness: 2, conscientiousness: 8, extraversion: 4, agreeableness: 6, neuroticism: 3 },
-                { label: "避免冲突", openness: 3, conscientiousness: 5, extraversion: 3, agreeableness: 9, neuroticism: 4 },
-                { label: "务实", openness: 4, conscientiousness: 8, extraversion: 4, agreeableness: 6, neuroticism: 3 },
-                { label: "物质主导", openness: 1, conscientiousness: 7, extraversion: 4, agreeableness: 5, neuroticism: 3 },
-                { label: "被动", openness: 3, conscientiousness: 2, extraversion: 2, agreeableness: 6, neuroticism: 3 },
-                { label: "内敛", openness: 4, conscientiousness: 5, extraversion: 2, agreeableness: 7, neuroticism: 4 },
-                { label: "非黑即白", openness: 2, conscientiousness: 7, extraversion: 6, agreeableness: 3, neuroticism: 5 }
-            ]
-        };
-
-        // 生成判断题
-        const questions = [];
-        const allTags = [];
-
-        // 收集所有标签
-        Object.keys(temperamentTags).forEach(temperament => {
-            temperamentTags[temperament].forEach(tagData => {
-                allTags.push({
-                    ...tagData,
-                    temperament: temperament
-                });
-            });
-        });
-
-        // 生成判断题
-        allTags.forEach(tag => {
-            const question = {
-                text: `我是一个${tag.label}的人`,
-                tag: tag
-            };
-            questions.push(question);
-        });
-
+        const temperamentTags = [
+            { label: "社交", openness: 6, conscientiousness: 4, extraversion: 9, agreeableness: 7, neuroticism: 3 },
+            { label: "活泼", openness: 6, conscientiousness: 3, extraversion: 9, agreeableness: 6, neuroticism: 3 },
+            { label: "情绪波动", openness: 5, conscientiousness: 2, extraversion: 7, agreeableness: 5, neuroticism: 8 },
+            { label: "精力旺盛", openness: 5, conscientiousness: 5, extraversion: 9, agreeableness: 5, neuroticism: 3 },
+            { label: "乐观", openness: 7, conscientiousness: 4, extraversion: 8, agreeableness: 7, neuroticism: 2 },
+            { label: "健谈", openness: 5, conscientiousness: 3, extraversion: 9, agreeableness: 6, neuroticism: 4 },
+            { label: "随和", openness: 5, conscientiousness: 4, extraversion: 7, agreeableness: 8, neuroticism: 3 },
+            { label: "寻求刺激", openness: 8, conscientiousness: 3, extraversion: 8, agreeableness: 5, neuroticism: 5 },
+            { label: "果断", openness: 5, conscientiousness: 8, extraversion: 8, agreeableness: 4, neuroticism: 5 },
+            { label: "领导力", openness: 6, conscientiousness: 8, extraversion: 9, agreeableness: 5, neuroticism: 4 },
+            { label: "野心", openness: 7, conscientiousness: 9, extraversion: 8, agreeableness: 3, neuroticism: 6 },
+            { label: "自信", openness: 6, conscientiousness: 6, extraversion: 8, agreeableness: 5, neuroticism: 3 },
+            { label: "竞争性", openness: 5, conscientiousness: 7, extraversion: 8, agreeableness: 3, neuroticism: 6 },
+            { label: "目标导向", openness: 5, conscientiousness: 9, extraversion: 7, agreeableness: 4, neuroticism: 4 },
+            { label: "急躁", openness: 4, conscientiousness: 5, extraversion: 7, agreeableness: 3, neuroticism: 7 },
+            { label: "支配性", openness: 5, conscientiousness: 7, extraversion: 8, agreeableness: 2, neuroticism: 6 },
+            { label: "敏感", openness: 7, conscientiousness: 6, extraversion: 2, agreeableness: 7, neuroticism: 9 },
+            { label: "温柔", openness: 5, conscientiousness: 5, extraversion: 3, agreeableness: 9, neuroticism: 6 },
+            { label: "封闭", openness: 6, conscientiousness: 5, extraversion: 1, agreeableness: 5, neuroticism: 7 },
+            { label: "共情", openness: 7, conscientiousness: 5, extraversion: 3, agreeableness: 9, neuroticism: 6 },
+            { label: "完美主义", openness: 6, conscientiousness: 9, extraversion: 3, agreeableness: 6, neuroticism: 8 },
+            { label: "深思熟虑", openness: 8, conscientiousness: 8, extraversion: 2, agreeableness: 6, neuroticism: 5 },
+            { label: "悲观", openness: 5, conscientiousness: 6, extraversion: 2, agreeableness: 7, neuroticism: 9 },
+            { label: "理想主义", openness: 9, conscientiousness: 5, extraversion: 3, agreeableness: 7, neuroticism: 7 },
+            { label: "冷静", openness: 4, conscientiousness: 7, extraversion: 4, agreeableness: 8, neuroticism: 2 },
+            { label: "耐心", openness: 4, conscientiousness: 8, extraversion: 3, agreeableness: 9, neuroticism: 3 },
+            { label: "稳定", openness: 3, conscientiousness: 8, extraversion: 4, agreeableness: 8, neuroticism: 2 },
+            { label: "可靠", openness: 3, conscientiousness: 9, extraversion: 3, agreeableness: 8, neuroticism: 2 },
+            { label: "平和", openness: 4, conscientiousness: 6, extraversion: 4, agreeableness: 9, neuroticism: 1 },
+            { label: "规律", openness: 2, conscientiousness: 8, extraversion: 4, agreeableness: 6, neuroticism: 3 },
+            { label: "避免冲突", openness: 3, conscientiousness: 5, extraversion: 3, agreeableness: 9, neuroticism: 4 },
+            { label: "务实", openness: 4, conscientiousness: 8, extraversion: 4, agreeableness: 6, neuroticism: 3 },
+            { label: "物质主导", openness: 1, conscientiousness: 7, extraversion: 4, agreeableness: 5, neuroticism: 3 },
+            { label: "被动", openness: 3, conscientiousness: 2, extraversion: 2, agreeableness: 6, neuroticism: 3 },
+            { label: "内敛", openness: 4, conscientiousness: 5, extraversion: 2, agreeableness: 7, neuroticism: 4 },
+            { label: "非黑即白", openness: 2, conscientiousness: 7, extraversion: 6, agreeableness: 3, neuroticism: 5 }
+        ];
         // 星座标签
         const zodiacTags = {
             "白羊座": ["开拓者", "行动派", "竞争者", "急先锋", "无畏者"],
@@ -787,7 +796,6 @@
             "水瓶座": ["革新者", "人道主义者", "怪人", "未来主义者", "社交观察者"],
             "双鱼座": ["梦想家", "共情者", "逃避者", "艺术家", "救世主情结"]
         };
-
         // 五行属性
         const zodiacElementMap = {
             "白羊座": "火", "狮子座": "火", "射手座": "火",
@@ -795,7 +803,6 @@
             "双子座": "风", "天秤座": "风", "水瓶座": "风",
             "巨蟹座": "水", "天蝎座": "水", "双鱼座": "水"
         };
-
         // 大五人格特殊机制
         const bigFiveMechanisms = {
             "白羊座": {
@@ -819,7 +826,123 @@
                 special: "当「幻象酿酒师」与「艺术镇定剂」同时激活 → 产生高价值创造性作品"
             }
         };
-
+        // 后天标签的大五人格评分规则
+        const postTagScores = {
+            mbti: {
+                "INTJ": { openness: 7, conscientiousness: 9, extraversion: 3, agreeableness: 5, neuroticism: 6 },
+                "INTP": { openness: 8, conscientiousness: 7, extraversion: 4, agreeableness: 5, neuroticism: 5 },
+                "ENTJ": { openness: 7, conscientiousness: 9, extraversion: 8, agreeableness: 4, neuroticism: 5 },
+                "ENTP": { openness: 9, conscientiousness: 7, extraversion: 8, agreeableness: 5, neuroticism: 6 },
+                "INFJ": { openness: 7, conscientiousness: 8, extraversion: 3, agreeableness: 8, neuroticism: 7 },
+                "INFP": { openness: 8, conscientiousness: 6, extraversion: 3, agreeableness: 9, neuroticism: 8 },
+                "ENFJ": { openness: 7, conscientiousness: 8, extraversion: 8, agreeableness: 9, neuroticism: 5 },
+                "ENFP": { openness: 9, conscientiousness: 6, extraversion: 8, agreeableness: 8, neuroticism: 7 },
+                "ISTJ": { openness: 5, conscientiousness: 9, extraversion: 3, agreeableness: 6, neuroticism: 3 },
+                "ISFJ": { openness: 5, conscientiousness: 9, extraversion: 4, agreeableness: 9, neuroticism: 4 },
+                "ESTJ": { openness: 5, conscientiousness: 9, extraversion: 7, agreeableness: 6, neuroticism: 3 },
+                "ESFJ": { openness: 5, conscientiousness: 8, extraversion: 8, agreeableness: 9, neuroticism: 4 },
+                "ISTP": { openness: 7, conscientiousness: 8, extraversion: 5, agreeableness: 6, neuroticism: 5 },
+                "ISFP": { openness: 7, conscientiousness: 6, extraversion: 4, agreeableness: 9, neuroticism: 6 },
+                "ESTP": { openness: 7, conscientiousness: 7, extraversion: 8, agreeableness: 6, neuroticism: 6 },
+                "ESFP": { openness: 7, conscientiousness: 6, extraversion: 8, agreeableness: 8, neuroticism: 5 }
+            },
+            blood: {
+                "A型": { openness: 4, conscientiousness: 8, extraversion: 4, agreeableness: 6, neuroticism: 4 },
+                "B型": { openness: 7, conscientiousness: 5, extraversion: 7, agreeableness: 5, neuroticism: 6 },
+                "O型": { openness: 5, conscientiousness: 7, extraversion: 7, agreeableness: 5, neuroticism: 3 },
+                "AB型": { openness: 6, conscientiousness: 6, extraversion: 5, agreeableness: 6, neuroticism: 7 }
+            },
+            event: {
+                "重大失败": { openness: 6, conscientiousness: 5, extraversion: 5, agreeableness: 6, neuroticism: 8 },
+                "突遇贵人": { openness: 7, conscientiousness: 7, extraversion: 8, agreeableness: 8, neuroticism: 4 },
+                "移民经历": { openness: 8, conscientiousness: 6, extraversion: 6, agreeableness: 6, neuroticism: 7 },
+                "自然灾害": { openness: 5, conscientiousness: 6, extraversion: 5, agreeableness: 7, neuroticism: 8 },
+                "重大疾病": { openness: 6, conscientiousness: 5, extraversion: 4, agreeableness: 8, neuroticism: 9 },
+                "意外财富": { openness: 7, conscientiousness: 5, extraversion: 8, agreeableness: 5, neuroticism: 5 },
+                "创业成功": { openness: 7, conscientiousness: 8, extraversion: 8, agreeableness: 4, neuroticism: 6 },
+                "家庭变故": { openness: 5, conscientiousness: 5, extraversion: 4, agreeableness: 8, neuroticism: 9 },
+                "教育转折": { openness: 8, conscientiousness: 7, extraversion: 5, agreeableness: 6, neuroticism: 5 },
+                "长期异地": { openness: 7, conscientiousness: 5, extraversion: 6, agreeableness: 7, neuroticism: 7 },
+                "法律纠纷": { openness: 5, conscientiousness: 7, extraversion: 5, agreeableness: 4, neuroticism: 8 },
+                "艺术启蒙": { openness: 9, conscientiousness: 5, extraversion: 6, agreeableness: 7, neuroticism: 6 },
+                "宗教体验": { openness: 9, conscientiousness: 6, extraversion: 4, agreeableness: 8, neuroticism: 7 },
+                "军事服役": { openness: 4, conscientiousness: 9, extraversion: 7, agreeableness: 5, neuroticism: 4 },
+                "网络走红": { openness: 8, conscientiousness: 5, extraversion: 9, agreeableness: 5, neuroticism: 7 },
+                "学术突破": { openness: 9, conscientiousness: 9, extraversion: 4, agreeableness: 5, neuroticism: 4 },
+                "职业转型": { openness: 8, conscientiousness: 7, extraversion: 7, agreeableness: 6, neuroticism: 6 },
+                "文化冲击": { openness: 9, conscientiousness: 6, extraversion: 6, agreeableness: 6, neuroticism: 7 },
+                "重大获奖": { openness: 7, conscientiousness: 8, extraversion: 8, agreeableness: 5, neuroticism: 3 },
+                "创伤经历": { openness: 6, conscientiousness: 4, extraversion: 4, agreeableness: 7, neuroticism: 9 }
+            },
+            career: {
+                "程序员": { openness: 6, conscientiousness: 9, extraversion: 4, agreeableness: 5, neuroticism: 4 },
+                "销售": { openness: 6, conscientiousness: 7, extraversion: 9, agreeableness: 6, neuroticism: 6 },
+                "艺术家": { openness: 9, conscientiousness: 5, extraversion: 6, agreeableness: 7, neuroticism: 7 },
+                "医生": { openness: 6, conscientiousness: 9, extraversion: 5, agreeableness: 9, neuroticism: 5 },
+                "教师": { openness: 6, conscientiousness: 8, extraversion: 7, agreeableness: 9, neuroticism: 4 },
+                "军人": { openness: 4, conscientiousness: 9, extraversion: 7, agreeableness: 5, neuroticism: 3 },
+                "企业家": { openness: 8, conscientiousness: 9, extraversion: 8, agreeableness: 4, neuroticism: 7 },
+                "自由职业": { openness: 8, conscientiousness: 6, extraversion: 7, agreeableness: 6, neuroticism: 6 },
+                "设计师": { openness: 9, conscientiousness: 7, extraversion: 6, agreeableness: 7, neuroticism: 6 },
+                "记者": { openness: 8, conscientiousness: 7, extraversion: 8, agreeableness: 6, neuroticism: 6 },
+                "金融分析师": { openness: 5, conscientiousness: 9, extraversion: 5, agreeableness: 5, neuroticism: 5 },
+                "科研人员": { openness: 9, conscientiousness: 9, extraversion: 4, agreeableness: 6, neuroticism: 4 },
+                "公务员": { openness: 4, conscientiousness: 9, extraversion: 4, agreeableness: 8, neuroticism: 3 },
+                "工程师": { openness: 6, conscientiousness: 9, extraversion: 5, agreeableness: 6, neuroticism: 4 },
+                "演员": { openness: 8, conscientiousness: 5, extraversion: 8, agreeableness: 7, neuroticism: 8 },
+                "心理咨询师": { openness: 8, conscientiousness: 7, extraversion: 5, agreeableness: 9, neuroticism: 7 }
+            },
+            class: {
+                "寒门出身": { openness: 6, conscientiousness: 7, extraversion: 6, agreeableness: 6, neuroticism: 8 },
+                "中产家庭": { openness: 6, conscientiousness: 7, extraversion: 6, agreeableness: 7, neuroticism: 5 },
+                "富裕阶层": { openness: 6, conscientiousness: 6, extraversion: 7, agreeableness: 6, neuroticism: 4 },
+                "新贵家庭": { openness: 7, conscientiousness: 7, extraversion: 7, agreeableness: 6, neuroticism: 5 },
+                "知识精英": { openness: 8, conscientiousness: 8, extraversion: 5, agreeableness: 7, neuroticism: 4 },
+                "工薪阶层": { openness: 5, conscientiousness: 7, extraversion: 5, agreeableness: 7, neuroticism: 5 },
+                "艺术世家": { openness: 9, conscientiousness: 6, extraversion: 6, agreeableness: 8, neuroticism: 6 },
+                "官宦背景": { openness: 5, conscientiousness: 8, extraversion: 7, agreeableness: 5, neuroticism: 4 }
+            },
+            spend: {
+                "奢侈品": { openness: 7, conscientiousness: 5, extraversion: 8, agreeableness: 5, neuroticism: 5 },
+                "知识付费": { openness: 8, conscientiousness: 8, extraversion: 5, agreeableness: 6, neuroticism: 4 },
+                "极简主义": { openness: 6, conscientiousness: 9, extraversion: 4, agreeableness: 7, neuroticism: 3 },
+                "冲动消费": { openness: 7, conscientiousness: 4, extraversion: 8, agreeableness: 5, neuroticism: 8 },
+                "收藏癖好": { openness: 8, conscientiousness: 7, extraversion: 5, agreeableness: 6, neuroticism: 6 },
+                "体验至上": { openness: 8, conscientiousness: 6, extraversion: 8, agreeableness: 7, neuroticism: 5 },
+                "性价比控": { openness: 5, conscientiousness: 9, extraversion: 4, agreeableness: 7, neuroticism: 3 },
+                "品牌忠诚": { openness: 5, conscientiousness: 8, extraversion: 5, agreeableness: 8, neuroticism: 4 }
+            },
+            social: {
+                "群聊主导者": { openness: 6, conscientiousness: 5, extraversion: 9, agreeableness: 6, neuroticism: 5 },
+                "倾听者": { openness: 6, conscientiousness: 6, extraversion: 4, agreeableness: 9, neuroticism: 4 },
+                "段子手": { openness: 8, conscientiousness: 5, extraversion: 9, agreeableness: 6, neuroticism: 6 },
+                "社交回避": { openness: 6, conscientiousness: 5, extraversion: 2, agreeableness: 7, neuroticism: 7 },
+                "关系协调者": { openness: 6, conscientiousness: 8, extraversion: 8, agreeableness: 9, neuroticism: 4 },
+                "意见领袖": { openness: 7, conscientiousness: 7, extraversion: 9, agreeableness: 5, neuroticism: 5 },
+                "搭讪达人": { openness: 7, conscientiousness: 5, extraversion: 9, agreeableness: 5, neuroticism: 6 },
+                "聚会策划": { openness: 7, conscientiousness: 8, extraversion: 9, agreeableness: 8, neuroticism: 4 }
+            },
+            time: {
+                "夜间活跃": { openness: 7, conscientiousness: 5, extraversion: 7, agreeableness: 5, neuroticism: 8 },
+                "晨型人": { openness: 5, conscientiousness: 8, extraversion: 6, agreeableness: 6, neuroticism: 3 },
+                "碎片化": { openness: 6, conscientiousness: 4, extraversion: 7, agreeableness: 6, neuroticism: 7 },
+                "深度工作": { openness: 7, conscientiousness: 9, extraversion: 4, agreeableness: 5, neuroticism: 4 },
+                "多任务处理": { openness: 7, conscientiousness: 7, extraversion: 8, agreeableness: 5, neuroticism: 6 },
+                "拖延大师": { openness: 6, conscientiousness: 3, extraversion: 7, agreeableness: 6, neuroticism: 8 },
+                "严格日程": { openness: 5, conscientiousness: 9, extraversion: 5, agreeableness: 6, neuroticism: 3 },
+                "即兴生活": { openness: 8, conscientiousness: 4, extraversion: 8, agreeableness: 6, neuroticism: 7 }
+            },
+            digital: {
+                "点赞狂魔": { openness: 6, conscientiousness: 4, extraversion: 8, agreeableness: 7, neuroticism: 5 },
+                "已读不回": { openness: 6, conscientiousness: 5, extraversion: 5, agreeableness: 4, neuroticism: 7 },
+                "长文党": { openness: 8, conscientiousness: 7, extraversion: 4, agreeableness: 6, neuroticism: 5 },
+                "表情包达人": { openness: 8, conscientiousness: 5, extraversion: 8, agreeableness: 7, neuroticism: 6 },
+                "深夜发图": { openness: 7, conscientiousness: 4, extraversion: 7, agreeableness: 5, neuroticism: 8 },
+                "头像常换": { openness: 7, conscientiousness: 4, extraversion: 7, agreeableness: 6, neuroticism: 7 },
+                "签名更新": { openness: 7, conscientiousness: 5, extraversion: 6, agreeableness: 6, neuroticism: 7 },
+                "群内潜水": { openness: 5, conscientiousness: 5, extraversion: 3, agreeableness: 7, neuroticism: 5 }
+            }
+        };
         // 用于存储用户选择的后天和行为标签
         const userPostTags = {
             mbti: [],
@@ -830,65 +953,166 @@
             spend: [],
             social: [],
             time: [],
-            digital: [],
-            health: [],
-            learning: [],
-            stress: [],
-            leisure: []
+            digital: []
         };
-
         // 页面加载完成后生成问题
         document.addEventListener('DOMContentLoaded', function() {
             const questionsContainer = document.getElementById('questions-container');
-            
-            // 生成问题
-            questions.forEach((question, index) => {
+            const progressBar = document.getElementById('progress-bar');
+            const testPage = document.getElementById('test-page');
+            const postTestPage = document.getElementById('post-test-page');
+            const resultsPage = document.getElementById('results-page');
+            // 生成40道问题
+            for (let i = 0; i < 40; i++) {
+                const question = temperamentTags[i % temperamentTags.length]; // 循环使用标签
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'question';
                 questionDiv.innerHTML = `
-                    <h3>${index + 1}. ${question.text}</h3>
-                    <div class="options">
-                        <div class="option" data-value="yes" data-question="${index}">
-                            <input type="radio" name="q${index}" id="yes${index}" style="display:none;">
-                            <label for="yes${index}">是</label>
-                        </div>
-                        <div class="option" data-value="no" data-question="${index}">
-                            <input type="radio" name="q${index}" id="no${index}" style="display:none;">
-                            <label for="no${index}">否</label>
-                        </div>
+                    <h3>第${i + 1}/40题</h3>
+                    <p style="margin-bottom: 12px; color: #555; line-height: 1.4;">我是一个${question.label}的人？</p>
+                    <div class="options" id="options-${i}">
+                        <div class="option" data-value="yes" data-question="${i}">是</div>
+                        <div class="option" data-value="no" data-question="${i}">否</div>
                     </div>
-                    <input type="hidden" id="hidden-input-${index}">
                 `;
                 questionsContainer.appendChild(questionDiv);
-            });
-
+            }
             // 为所有选项添加点击事件
             const optionElements = document.querySelectorAll('.option');
             optionElements.forEach(option => {
                 option.addEventListener('click', function() {
                     const value = this.getAttribute('data-value');
                     const questionIndex = this.getAttribute('data-question');
-                    
-                    // 更新隐藏输入框
-                    document.getElementById(`hidden-input-${questionIndex}`).value = value;
-                    
                     // 更新UI
                     const options = this.parentElement.querySelectorAll('.option');
                     options.forEach(opt => opt.classList.remove('selected'));
                     this.classList.add('selected');
-                    
                     // 更新进度条
                     updateProgress();
                 });
             });
-
-            // ============ 新增页面的交互逻辑 ============
-            const postTestPage = document.getElementById('post-test-page');
-            const personalityForm = document.getElementById('personality-form');
-            const nextToPostTestBtn = document.getElementById('nextToPostTestBtn');
-            const backToTestBtn = document.getElementById('backToTestBtn');
-            const submitFinalBtn = document.getElementById('submitFinalBtn');
-
+            // 更新进度条
+            function updateProgress() {
+                const totalQuestions = 40;
+                const answeredQuestions = document.querySelectorAll('.option.selected').length;
+                const progressPercent = (answeredQuestions / totalQuestions) * 100;
+                progressBar.style.width = progressPercent + '%';
+            }
+            // 获取星座
+            function getZodiac(dob) {
+                const month = dob.getMonth() + 1;
+                const day = dob.getDate();
+                let sign = '';
+                if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) sign = "白羊座";
+                else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) sign = "金牛座";
+                else if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) sign = "双子座";
+                else if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) sign = "巨蟹座";
+                else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) sign = "狮子座";
+                else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) sign = "处女座";
+                else if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) sign = "天秤座";
+                else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) sign = "天蝎座";
+                else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) sign = "射手座";
+                else if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) sign = "摩羯座";
+                else if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) sign = "水瓶座";
+                else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) sign = "双鱼座";
+                return sign;
+            }
+            // 计算四液质结果
+            function getTemperamentResult() {
+                const scores = { sanguine: 0, choleric: 0, melancholic: 0, phlegmatic: 0 };
+                const bigFiveScores = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
+                for (let i = 0; i < 40; i++) {
+                    const selectedValue = document.querySelector(`#options-${i} .option.selected`)?.getAttribute('data-value');
+                    if (selectedValue === 'yes') {
+                        const tag = temperamentTags[i % temperamentTags.length];
+                        // 四液质计分
+                        if (temperamentTags[i % temperamentTags.length].label === "社交" || temperamentTags[i % temperamentTags.length].label === "活泼" || 
+                            temperamentTags[i % temperamentTags.length].label === "情绪波动" || temperamentTags[i % temperamentTags.length].label === "精力旺盛" ||
+                            temperamentTags[i % temperamentTags.length].label === "乐观" || temperamentTags[i % temperamentTags.length].label === "健谈" ||
+                            temperamentTags[i % temperamentTags.length].label === "随和" || temperamentTags[i % temperamentTags.length].label === "寻求刺激") {
+                            scores.sanguine += 1;
+                        } else if (temperamentTags[i % temperamentTags.length].label === "果断" || temperamentTags[i % temperamentTags.length].label === "领导力" || 
+                                  temperamentTags[i % temperamentTags.length].label === "野心" || temperamentTags[i % temperamentTags.length].label === "自信" ||
+                                  temperamentTags[i % temperamentTags.length].label === "竞争性" || temperamentTags[i % temperamentTags.length].label === "目标导向" ||
+                                  temperamentTags[i % temperamentTags.length].label === "急躁" || temperamentTags[i % temperamentTags.length].label === "支配性") {
+                            scores.choleric += 1;
+                        } else if (temperamentTags[i % temperamentTags.length].label === "敏感" || temperamentTags[i % temperamentTags.length].label === "温柔" || 
+                                   temperamentTags[i % temperamentTags.length].label === "封闭" || temperamentTags[i % temperamentTags.length].label === "共情" ||
+                                   temperamentTags[i % temperamentTags.length].label === "完美主义" || temperamentTags[i % temperamentTags.length].label === "深思熟虑" ||
+                                   temperamentTags[i % temperamentTags.length].label === "悲观" || temperamentTags[i % temperamentTags.length].label === "理想主义") {
+                            scores.melancholic += 1;
+                        } else {
+                            scores.phlegmatic += 1;
+                        }
+                        // 大五人格计分
+                        bigFiveScores.openness += tag.openness;
+                        bigFiveScores.conscientiousness += tag.conscientiousness;
+                        bigFiveScores.extraversion += tag.extraversion;
+                        bigFiveScores.agreeableness += tag.agreeableness;
+                        bigFiveScores.neuroticism += tag.neuroticism;
+                    }
+                }
+                // 将大五人格分数标准化到0-100范围
+                const maxPossible = 40 * 9; // 40题 * 最高分9
+                const minPossible = 0;
+                const range = maxPossible - minPossible;
+                const normalizedBigFive = {
+                    openness: Math.round((bigFiveScores.openness / range) * 100),
+                    conscientiousness: Math.round((bigFiveScores.conscientiousness / range) * 100),
+                    extraversion: Math.round((bigFiveScores.extraversion / range) * 100),
+                    agreeableness: Math.round((bigFiveScores.agreeableness / range) * 100),
+                    neuroticism: Math.round((bigFiveScores.neuroticism / range) * 100)
+                };
+                return {
+                    temperamentScores: scores,
+                    bigFiveScores: normalizedBigFive
+                };
+            }
+            // 计算后天大五人格得分
+            function getPostBigFiveScores() {
+                const scores = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
+                let tagCount = 0;
+                
+                // 遍历所有标签类型
+                Object.keys(userPostTags).forEach(tagType => {
+                    userPostTags[tagType].forEach(tag => {
+                        if (postTagScores[tagType] && postTagScores[tagType][tag]) {
+                            scores.openness += postTagScores[tagType][tag].openness;
+                            scores.conscientiousness += postTagScores[tagType][tag].conscientiousness;
+                            scores.extraversion += postTagScores[tagType][tag].extraversion;
+                            scores.agreeableness += postTagScores[tagType][tag].agreeableness;
+                            scores.neuroticism += postTagScores[tagType][tag].neuroticism;
+                            tagCount++;
+                        }
+                    });
+                });
+                
+                // 如果没有选择任何标签，返回默认值
+                if (tagCount === 0) {
+                    return {
+                        openness: 50,
+                        conscientiousness: 50,
+                        extraversion: 50,
+                        agreeableness: 50,
+                        neuroticism: 50
+                    };
+                }
+                
+                // 计算平均值并标准化到0-100范围
+                const avgOpenness = (scores.openness / tagCount) * (100 / 9);
+                const avgConscientiousness = (scores.conscientiousness / tagCount) * (100 / 9);
+                const avgExtraversion = (scores.extraversion / tagCount) * (100 / 9);
+                const avgAgreeableness = (scores.agreeableness / tagCount) * (100 / 9);
+                const avgNeuroticism = (scores.neuroticism / tagCount) * (100 / 9);
+                
+                return {
+                    openness: Math.round(avgOpenness),
+                    conscientiousness: Math.round(avgConscientiousness),
+                    extraversion: Math.round(avgExtraversion),
+                    agreeableness: Math.round(avgAgreeableness),
+                    neuroticism: Math.round(avgNeuroticism)
+                };
+            }
             // 为所有可选项添加点击事件
             document.querySelectorAll('.tag-options').forEach(group => {
                 const groupId = group.id;
@@ -897,7 +1121,6 @@
                     option.addEventListener('click', function() {
                         const tag = this.getAttribute('data-tag');
                         const isSingleSelect = ['mbti', 'blood'].some(prefix => groupId.startsWith(prefix));
-                        
                         if (isSingleSelect) {
                             // 单选逻辑 (MBTI, 血型)
                             options.forEach(opt => opt.classList.remove('selected', 'single-selected'));
@@ -918,9 +1141,8 @@
                     });
                 });
             });
-
             // “进入下一步” 按钮
-            nextToPostTestBtn.addEventListener('click', function() {
+            document.getElementById('nextToPostTestBtn').addEventListener('click', function() {
                 // 验证第一部分
                 const dobInput = document.getElementById('dob').value;
                 if (!dobInput) {
@@ -928,300 +1150,45 @@
                     return;
                 }
                 const unanswered = [];
-                for (let i = 0; i < questions.length; i++) {
-                    if (!document.querySelector(`#hidden-input-${i}`)) {
+                for (let i = 0; i < 40; i++) {
+                    if (!document.querySelector(`#options-${i} .option.selected`)) {
                         unanswered.push(i + 1);
                     }
                 }
                 if (unanswered.length > 0) {
-                    alert(`还有 ${unanswered.length} 个问题未回答`);
+                    alert(`请完成第${unanswered.join(', ')}题`);
                     return;
                 }
-                
-                // 切换到后天标签页面
-                personalityForm.classList.remove('active-page');
-                postTestPage.style.display = 'block';
+                // 隐藏当前页面，显示行为标签页面
+                testPage.classList.remove('active');
+                postTestPage.classList.add('active');
             });
-
-            // “上一步” 按钮
-            backToTestBtn.addEventListener('click', function() {
-                postTestPage.style.display = 'none';
-                personalityForm.classList.add('active-page');
+            // “上一步” 按钮 (从行为标签页回到测试页)
+            document.getElementById('backToTestBtn').addEventListener('click', function() {
+                postTestPage.classList.remove('active');
+                testPage.classList.add('active');
             });
-
-            // “生成我的人格报告” 按钮
-            submitFinalBtn.addEventListener('click', function() {
-                // 获取出生日期
+            // “生成报告” 按钮
+            document.getElementById('submitFinalBtn').addEventListener('click', function() {
+                // 验证第二部分（可选）
                 const dobInput = document.getElementById('dob').value;
                 const dob = new Date(dobInput);
-                if (!dob) {
-                    alert('请填写有效的出生日期');
-                    return;
-                }
-
-                // 获取星座和四液质结果
                 const zodiac = getZodiac(dob);
-                const temperament = getTemperamentResult();
-                const bigFive = temperament.bigFiveScores;
                 const zodiacElement = zodiacElementMap[zodiac] || "未知";
-
+                const temperamentResult = getTemperamentResult();
+                const postBigFiveScores = getPostBigFiveScores();
                 // 生成并显示结果
-                displayResults(zodiac, temperament, bigFive, zodiacElement, userPostTags);
+                displayResults(zodiac, zodiacElement, temperamentResult, postBigFiveScores);
             });
-
-            // 更新进度条
-            function updateProgress() {
-                const totalQuestions = questions.length;
-                const answeredQuestions = document.querySelectorAll('.option.selected').length;
-                const progressPercent = (answeredQuestions / totalQuestions) * 100;
-                document.getElementById('progress-bar').style.width = progressPercent + '%';
-            }
-
-            // 获取星座
-            function getZodiac(dob) {
-                const month = dob.getMonth() + 1;
-                const day = dob.getDate();
-                let sign = '';
-                
-                if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) sign = "白羊座";
-                else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) sign = "金牛座";
-                else if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) sign = "双子座";
-                else if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) sign = "巨蟹座";
-                else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) sign = "狮子座";
-                else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) sign = "处女座";
-                else if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) sign = "天秤座";
-                else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) sign = "天蝎座";
-                else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) sign = "射手座";
-                else if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) sign = "摩羯座";
-                else if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) sign = "水瓶座";
-                else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) sign = "双鱼座";
-                
-                return sign;
-            }
-
-            // 计算四液质结果
-            function getTemperamentResult() {
-                const scores = { sanguine: 0, choleric: 0, melancholic: 0, phlegmatic: 0 };
-                const bigFiveScores = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
-                
-                for (let i = 0; i < questions.length; i++) {
-                    const selectedValue = document.querySelector(`#hidden-input-${i}`)?.value;
-                    if (selectedValue === 'yes') {
-                        const tag = questions[i].tag;
-                        // 四液质计分
-                        scores[tag.temperament] += 1;
-                        // 大五人格计分
-                        bigFiveScores.openness += tag.openness;
-                        bigFiveScores.conscientiousness += tag.conscientiousness;
-                        bigFiveScores.extraversion += tag.extraversion;
-                        bigFiveScores.agreeableness += tag.agreeableness;
-                        bigFiveScores.neuroticism += tag.neuroticism;
-                    }
-                }
-                
-                // 将大五人格分数标准化到0-100范围
-                const maxPossible = 40 * 9; // 40题 * 最高分9
-                const minPossible = 0;
-                const range = maxPossible - minPossible;
-                const normalizedBigFive = {
-                    openness: Math.round((bigFiveScores.openness / range) * 100),
-                    conscientiousness: Math.round((bigFiveScores.conscientiousness / range) * 100),
-                    extraversion: Math.round((bigFiveScores.extraversion / range) * 100),
-                    agreeableness: Math.round((bigFiveScores.agreeableness / range) * 100),
-                    neuroticism: Math.round((bigFiveScores.neuroticism / range) * 100)
-                };
-                
-                // 找出最高的四液质
-                let maxScore = 0;
-                let dominantTemperament = '';
-                Object.keys(scores).forEach(key => {
-                    if (scores[key] > maxScore) {
-                        maxScore = scores[key];
-                        dominantTemperament = key;
-                    }
-                });
-                
-                return {
-                    dominant: dominantTemperament,
-                    scores: scores,
-                    bigFiveScores: normalizedBigFive
-                };
-            }
-
-            // 生成分析报告，所有标签都带有量化指标
-            function generateAnalysis(postTags, bigFive, zodiac) {
-                const analysis = {
-                    personalityStructure: [],
-                    environmentAdaptation: [],
-                    entropyWarning: [],
-                    optimizationStrategies: []
-                };
-
-                // --- 人格结构 (基于MBTI和核心特质) ---
-                // 根据MBTI推断系统化思维
-                if (postTags.mbti.includes('INTJ') || postTags.mbti.includes('ENTJ') || postTags.mbti.includes('ISTJ') || postTags.mbti.includes('ESTJ')) {
-                    const systemScore = Math.min(100, 70 + bigFive.conscientiousness * 0.4);
-                    analysis.personalityStructure.push(`高系统化思维倾向（系统整合力 ${systemScore}%）`);
-                }
-                // 根据MBTI推断情感表达
-                if (postTags.mbti.includes('INTJ') || postTags.mbti.includes('ENTJ')) {
-                    const emotionScore = 100 - bigFive.agreeableness;
-                    analysis.personalityStructure.push(`架构者本能与情感雷达的动态平衡（情感折叠指数：${emotionScore}%）`);
-                } else if (postTags.mbti.includes('INFP') || postTags.mbti.includes('ENFP')) {
-                    const idealismScore = Math.min(100, 60 + bigFive.openness * 0.5);
-                    analysis.personalityStructure.push(`理想主义愿景与现实落地的矛盾张力（理想主义指数：${idealismScore}%）`);
-                }
-
-                // --- 环境适应力 (基于职业、消费、休闲等) ---
-                // 职业烙印
-                if (postTags.career.includes('程序员')) {
-                    const logicScore = Math.min(100, 60 + bigFive.conscientiousness * 0.5);
-                    analysis.environmentAdaptation.push(`逻辑闭环能力 +${logicScore}%`);
-                }
-                if (postTags.career.includes('艺术家')) {
-                    const creativeScore = Math.min(100, 50 + bigFive.openness * 0.7);
-                    analysis.environmentAdaptation.push(`非线性创造力通道激活（创造力指数：${creativeScore}%）`);
-                }
-                if (postTags.career.includes('医生')) {
-                    const stressScore = Math.min(100, 55 + bigFive.conscientiousness * 0.6);
-                    analysis.environmentAdaptation.push(`高压决策耐受力 +${stressScore}%`);
-                }
-                // 休闲偏好
-                if (postTags.leisure.includes('户外探险')) {
-                    const uncertaintyScore = Math.min(100, 40 + bigFive.openness * 0.8);
-                    analysis.environmentAdaptation.push(`环境不确定性耐受力 +${uncertaintyScore}%`);
-                }
-                if (postTags.leisure.includes('阅读成瘾')) {
-                    const knowledgeScore = Math.min(100, 50 + bigFive.openness * 0.6);
-                    analysis.environmentAdaptation.push(`知识获取效率 +${knowledgeScore}%`);
-                }
-
-                // --- 潜在熵增警告 (基于社会阶层、压力应对、健康习惯等) ---
-                // 社会阶层
-                if (postTags.class.includes('寒门出身')) {
-                    const anxietyScore = Math.min(100, 50 + bigFive.neuroticism * 0.6);
-                    analysis.entropyWarning.push(`向上流动焦虑指数：${anxietyScore}%`);
-                }
-                if (postTags.class.includes('富裕阶层')) {
-                    const meaningScore = Math.min(100, 30 + bigFive.neuroticism * 0.4);
-                    analysis.entropyWarning.push(`意义感真空风险 +${meaningScore}%`);
-                }
-                // 压力应对
-                if (postTags.stress.includes('逃避现实')) {
-                    const delayScore = Math.min(100, 40 + bigFive.neuroticism * 0.7);
-                    analysis.entropyWarning.push(`问题解决延迟成本 +${delayScore}%`);
-                }
-                if (postTags.stress.includes('暴饮暴食')) {
-                    const healthScore = Math.min(100, 35 + bigFive.neuroticism * 0.8);
-                    analysis.entropyWarning.push(`健康风险增压 +${healthScore}%`);
-                }
-                // 健康习惯
-                if (postTags.health.includes('医疗恐惧')) {
-                    const riskScore = Math.min(100, 40 + bigFive.neuroticism * 0.6);
-                    analysis.entropyWarning.push(`预防性医疗缺失风险 +${riskScore}%`);
-                }
-
-                // --- 优化策略 (基于学习风格、时间分配、数字行为等) ---
-                // 学习风格
-                if (postTags.learning.includes('系统学习')) {
-                    const knowledgeScore = Math.min(100, 70 + bigFive.conscientiousness * 0.4);
-                    analysis.optimizationStrategies.push(`知识图谱构建能力 +${knowledgeScore}%`);
-                }
-                if (postTags.learning.includes('碎片学习')) {
-                    const integrationScore = Math.max(20, 50 - bigFive.conscientiousness * 0.5);
-                    analysis.optimizationStrategies.push(`知识整合碎片化风险（整合效率：${integrationScore}%）`);
-                }
-                // 时间分配
-                if (postTags.time.includes('夜间活跃')) {
-                    const inspirationScore = Math.min(100, 50 + bigFive.openness * 0.6);
-                    analysis.optimizationStrategies.push(`灵感峰值利用率 +${inspirationScore}%`);
-                }
-                if (postTags.time.includes('拖延大师')) {
-                    const deadlineScore = Math.min(100, 45 + bigFive.neuroticism * 0.5);
-                    analysis.optimizationStrategies.push(`deadline驱动型压力反应（效率：${deadlineScore}%）`);
-                }
-                // 数字肢体语言
-                if (postTags.digital.includes('已读不回')) {
-                    const boundaryScore = Math.min(100, 60 + bigFive.neuroticism * 0.4);
-                    analysis.optimizationStrategies.push(`数字社交责任过载（边界维护指数：${boundaryScore}%）`);
-                }
-                if (postTags.digital.includes('表情包达人')) {
-                    const expressionScore = Math.min(100, 40 + bigFive.openness * 0.7);
-                    analysis.optimizationStrategies.push(`情感表达编码效率 +${expressionScore}%`);
-
-                }
-                // 压力应对
-                if (postTags.stress.includes('运动释放')) {
-                    const metabolismScore = Math.min(100, 50 + bigFive.extraversion * 0.5);
-                    analysis.optimizationStrategies.push(`生理性压力代谢通道（效率：${metabolismScore}%）`);
-                }
-                if (postTags.stress.includes('寻求支持')) {
-                    const supportScore = Math.min(100, 60 + bigFive.agreeableness * 0.5);
-                    analysis.optimizationStrategies.push(`社会支持系统利用率 +${supportScore}%`);
-                }
-
-                // --- 基于大五人格的通用分析 ---
-                // 神经质
-                if (bigFive.neuroticism > 70) {
-                    const criticalScore = bigFive.neuroticism;
-                    analysis.entropyWarning.push(`神经质指数临界值 ${criticalScore}% (高风险)`);
-                } else if (bigFive.neuroticism > 50) {
-                    const moderateScore = bigFive.neuroticism;
-                    analysis.entropyWarning.push(`神经质指数 ${moderateScore}% (中等)`);
-                }
-                // 开放性
-                if (bigFive.openness > 70) {
-                    const innovationScore = bigFive.openness;
-                    analysis.environmentAdaptation.push(`创新思维活跃度 +${innovationScore}%`);
-                }
-                // 尽责性
-                if (bigFive.conscientiousness < 40) {
-                    const fragilityScore = 100 - bigFive.conscientiousness;
-                    analysis.entropyWarning.push(`目标执行链条脆弱（脆弱度：${fragilityScore}%）`);
-                }
-
-                // 添加一些基于星座的量化标签
-                if (zodiac === "天蝎座") {
-                    const depthScore = Math.min(100, 60 + bigFive.neuroticism * 0.5);
-                    analysis.optimizationStrategies.push(`情感深度资源激活（深度：${depthScore}%）`);
-                }
-                if (zodiac === "双子座") {
-                    const bandwidthScore = Math.min(100, 50 + bigFive.openness * 0.6);
-                    analysis.environmentAdaptation.push(`信息处理带宽 +${bandwidthScore}%`);
-                }
-
-                // 添加通用标签作为兜底，也进行量化
-                analysis.personalityStructure.push(`精密编码的情感表达机制（编码复杂度：75%）`);
-                analysis.personalityStructure.push(`风险预判与机会捕捉双重驱动（平衡指数：60%）`);
-                analysis.environmentAdaptation.push(`跨界适应力 +${Math.min(100, 40 + bigFive.openness * 0.7)}%`);
-                analysis.environmentAdaptation.push(`情感表达畅通度 -${Math.max(10, 25 - bigFive.agreeableness * 0.3)}%`);
-                analysis.entropyWarning.push(`心流体验减压 -${Math.min(80, 20 + bigFive.openness * 0.8)}%`);
-                analysis.optimizationStrategies.push(`建立情感直输通道（降低编码能耗 ${Math.max(10, 30 - bigFive.neuroticism * 0.4)}%）`);
-                analysis.optimizationStrategies.push(`实施反完美主义训练计划（减压 ${Math.max(15, 25 - bigFive.neuroticism * 0.3)}%）`);
-
-                return analysis;
-            }
-
             // 显示结果
-            function displayResults(zodiac, temperament, bigFive, zodiacElement, postTags) {
-                const resultsDiv = document.getElementById('results');
+            function displayResults(zodiac, zodiacElement, temperament, postBigFive) {
                 const resultsContent = document.getElementById('results-content');
-                
+                const bigFive = temperament.bigFiveScores;
                 // 生成分析
-                const analysisResult = generateAnalysis(postTags, bigFive, zodiac);
-                
-                // 人格类型标签 (示例，也可以量化)
-                const personalityTypeLabels = ["矛盾协调型人格(高)", "动态平衡架构师(中)", "风险感知型创新者(高)", "情感折叠型表达者(中高)"];
-                // 核心特质标签
-                const coreTraitLabels = ["系统整合者(92%)", "跨界适应者(78%)", "熵值管理者(65%)", "矛盾协调者(85%)"];
-                // 发展潜力标签
-                const potentialLabels = ["认知弹性潜力值：★★★★☆", "情感表达潜力值：★★★☆☆", "压力耐受潜力值：★★★★★", "创新突破潜力值：★★★★☆"];
-                // 关系模式标签
-                const relationshipLabels = ["情感价值交换者(高)", "深度连接探索者(中)", "社交能量管理者(中高)", "边界守护者(高)"];
-
+                const analysisResult = generateAnalysis(userPostTags, bigFive, postBigFive, zodiac);
                 // 构建结果HTML
                 resultsContent.innerHTML = `
-                    <!-- 星座与四液质 -->
+                    <!-- 星座与五行 -->
                     <div class="result-item">
                         <h3><i>🌟</i> 星座与五行</h3>
                         <p><strong>你的星座：</strong> ${zodiac}</p>
@@ -1230,70 +1197,73 @@
                             ${zodiacTags[zodiac].map(tag => `<span class="tag">${tag}</span>`).join('')}
                         </div>
                     </div>
-
-                    <!-- 四液质 -->
+                    <!-- 四液质分布 -->
                     <div class="result-item">
-                        <h3><i>🧪</i> 四液质分析</h3>
-                        <p><strong>主导气质：</strong> ${temperament.dominant === 'sanguine' ? '多血质' : 
-                                                  temperament.dominant === 'choleric' ? '胆汁质' : 
-                                                  temperament.dominant === 'melancholic' ? '抑郁质' : '粘液质'}</p>
-                        <div class="bar-container">
-                            <div class="bar" style="width: ${((temperament.scores.sanguine / 8) * 100)}%">多血质 ${temperament.scores.sanguine}/8</div>
-                        </div>
-                        <div class="bar-container">
-                            <div class="bar" style="width: ${((temperament.scores.choleric / 8) * 100)}%">胆汁质 ${temperament.scores.choleric}/8</div>
-                        </div>
-                        <div class="bar-container">
-                            <div class="bar" style="width: ${((temperament.scores.melancholic / 8) * 100)}%">抑郁质 ${temperament.scores.melancholic}/8</div>
-                        </div>
-                        <div class="bar-container">
-                            <div class="bar" style="width: ${((temperament.scores.phlegmatic / 12) * 100)}%">粘液质 ${temperament.scores.phlegmatic}/12</div>
-                        </div>
+                        <h3><i>🧪</i> 四液质分布</h3>
+                        ${Object.entries(temperament.temperamentScores).map(([type, score]) => {
+                            const typeName = type === 'sanguine' ? '多血质' : 
+                                           type === 'choleric' ? '胆汁质' : 
+                                           type === 'melancholic' ? '抑郁质' : '粘液质';
+                            return `<div style="margin: 12px 0;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                            <span style="font-weight: 500; color: #2c3e50; font-size: 0.95em;">${typeName}</span>
+                                            <span style="color: #666; font-size: 0.95em;">${score}/10</span>
+                                        </div>
+                                        <div class="bar-container">
+                                            <div class="bar" style="width: ${score * 10}%;">${score}/10</div>
+                                        </div>
+                                    </div>`;
+                        }).join('')}
                     </div>
-
-                    <!-- 大五人格 -->
+                    <!-- 四液质大五人格分析 -->
                     <div class="result-item">
-                        <h3><i>📊</i> 大五人格维度</h3>
+                        <h3><i>📊</i> 四液质大五人格</h3>
                         <table class="dimension-table">
                             <tr>
                                 <th>维度</th>
                                 <th>得分</th>
+                                <th>满分</th>
                                 <th>解读</th>
                             </tr>
                             <tr>
                                 <td>开放性</td>
                                 <td>${bigFive.openness}</td>
-                                <td>${bigFive.openness > 70 ? '高度开放，富有想象力和创造力' : 
+                                <td>100</td>
+                                <td>${bigFive.openness > 70 ? '<span class="high-score">高度开放</span>，富有想象力和创造力' : 
                                     bigFive.openness > 50 ? '中等偏上，乐于接受新事物' : 
-                                    bigFive.openness > 30 ? '中等，偏好熟悉的事物' : '较低，偏好传统和常规'}</td>
+                                    bigFive.openness > 30 ? '中等，偏好熟悉的事物' : '<span class="low-score">较低</span>，偏好传统和常规'}</td>
                             </tr>
                             <tr>
                                 <td>尽责性</td>
                                 <td>${bigFive.conscientiousness}</td>
-                                <td>${bigFive.conscientiousness > 70 ? '高度自律，做事有条理' : 
+                                <td>100</td>
+                                <td>${bigFive.conscientiousness > 70 ? '<span class="high-score">高度自律</span>，做事有条理' : 
                                     bigFive.conscientiousness > 50 ? '中等偏上，较为可靠' : 
-                                    bigFive.conscientiousness > 30 ? '中等，有时会拖延' : '较低，比较随性'}</td>
+                                    bigFive.conscientiousness > 30 ? '中等，有时会拖延' : '<span class="low-score">较低</span>，比较随性'}</td>
                             </tr>
                             <tr>
                                 <td>外向性</td>
                                 <td>${bigFive.extraversion}</td>
+                                <td>100</td>
                                 <td>${bigFive.extraversion > 70 ? '非常外向，精力充沛' : 
                                     bigFive.extraversion > 50 ? '中等偏上，喜欢社交' : 
-                                    bigFive.extraversion > 30 ? '中等，内外向平衡' : '较低，偏好独处'}</td>
+                                    bigFive.extraversion > 30 ? '中等，内外向平衡' : '<span class="low-score">较低</span>，偏好独处'}</td>
                             </tr>
                             <tr>
                                 <td>宜人性</td>
                                 <td>${bigFive.agreeableness}</td>
+                                <td>100</td>
                                 <td>${bigFive.agreeableness > 70 ? '非常友善，乐于合作' : 
                                     bigFive.agreeableness > 50 ? '中等偏上，比较随和' : 
-                                    bigFive.agreeableness > 30 ? '中等，有自己的主见' : '较低，比较直接'}</td>
+                                    bigFive.agreeableness > 30 ? '中等，有自己的主见' : '<span class="low-score">较低</span>，比较直接'}</td>
                             </tr>
                             <tr>
                                 <td>神经质</td>
                                 <td>${bigFive.neuroticism}</td>
-                                <td>${bigFive.neuroticism > 70 ? '情绪波动较大，容易焦虑' : 
+                                <td>100</td>
+                                <td>${bigFive.neuroticism > 70 ? '<span class="high-score">情绪波动较大</span>，容易焦虑' : 
                                     bigFive.neuroticism > 50 ? '中等偏上，情绪较敏感' : 
-                                    bigFive.neuroticism > 30 ? '中等，情绪较为稳定' : '非常稳定，不易焦虑'}</td>
+                                    bigFive.neuroticism > 30 ? '中等，情绪较为稳定' : '<span class="low-score">非常稳定</span>，不易焦虑'}</td>
                             </tr>
                         </table>
                         ${bigFiveMechanisms[zodiac] ? `
@@ -1302,15 +1272,65 @@
                             <p>${bigFiveMechanisms[zodiac].special}</p>
                         </div>` : ''}
                     </div>
-
+                    <!-- 后天大五人格分析 -->
+                    <div class="result-item">
+                        <h3><i>🎯</i> 后天大五人格</h3>
+                        <table class="dimension-table">
+                            <tr>
+                                <th>维度</th>
+                                <th>得分</th>
+                                <th>满分</th>
+                                <th>解读</th>
+                            </tr>
+                            <tr>
+                                <td>开放性</td>
+                                <td>${postBigFive.openness}</td>
+                                <td>100</td>
+                                <td>${postBigFive.openness > 70 ? '<span class="high-score">高度开放</span>，思维活跃' : 
+                                    postBigFive.openness > 50 ? '中等偏上，接受新事物' : 
+                                    postBigFive.openness > 30 ? '中等，偏好熟悉' : '<span class="low-score">较低</span>，偏好传统'}</td>
+                            </tr>
+                            <tr>
+                                <td>尽责性</td>
+                                <td>${postBigFive.conscientiousness}</td>
+                                <td>100</td>
+                                <td>${postBigFive.conscientiousness > 70 ? '<span class="high-score">高度自律</span>，有条理' : 
+                                    postBigFive.conscientiousness > 50 ? '中等偏上，较为可靠' : 
+                                    postBigFive.conscientiousness > 30 ? '中等，有时拖延' : '<span class="low-score">较低</span>，比较随性'}</td>
+                            </tr>
+                            <tr>
+                                <td>外向性</td>
+                                <td>${postBigFive.extraversion}</td>
+                                <td>100</td>
+                                <td>${postBigFive.extraversion > 70 ? '非常外向，精力充沛' : 
+                                    postBigFive.extraversion > 50 ? '中等偏上，喜欢社交' : 
+                                    postBigFive.extraversion > 30 ? '中等，内外向平衡' : '<span class="low-score">较低</span>，偏好独处'}</td>
+                            </tr>
+                            <tr>
+                                <td>宜人性</td>
+                                <td>${postBigFive.agreeableness}</td>
+                                <td>100</td>
+                                <td>${postBigFive.agreeableness > 70 ? '非常友善，乐于合作' : 
+                                    postBigFive.agreeableness > 50 ? '中等偏上，比较随和' : 
+                                    postBigFive.agreeableness > 30 ? '中等，有自己的主见' : '<span class="low-score">较低</span>，比较直接'}</td>
+                            </tr>
+                            <tr>
+                                <td>神经质</td>
+                                <td>${postBigFive.neuroticism}</td>
+                                <td>100</td>
+                                <td>${postBigFive.neuroticism > 70 ? '<span class="high-score">情绪波动较大</span>，容易焦虑' : 
+                                    postBigFive.neuroticism > 50 ? '中等偏上，情绪较敏感' : 
+                                    postBigFive.neuroticism > 30 ? '中等，情绪较为稳定' : '<span class="low-score">非常稳定</span>，不易焦虑'}</td>
+                            </tr>
+                        </table>
+                    </div>
                     <!-- 人格类型标签 -->
                     <div class="result-item">
-                        <h3><i>👤</i> 人格类型标签</h3>
+                        <h3><i>🏷️</i> 人格类型标签</h3>
                         <div class="tags">
-                            ${personalityTypeLabels.map(label => `<span class="tag">${label}</span>`).join('')}
+                            ${analysisResult.personalityType.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
-
                     <!-- 人格结构 -->
                     <div class="result-item">
                         <h3><i>🧩</i> 人格结构</h3>
@@ -1318,7 +1338,13 @@
                             ${analysisResult.personalityStructure.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
-
+                    <!-- 核心特质标签 -->
+                    <div class="result-item">
+                        <h3><i>🎯</i> 核心特质标签</h3>
+                        <div class="tags">
+                            ${analysisResult.coreTraits.map(label => `<span class="tag">${label}</span>`).join('')}
+                        </div>
+                    </div>
                     <!-- 环境适应力 -->
                     <div class="result-item">
                         <h3><i>🌍</i> 环境适应力</h3>
@@ -1326,15 +1352,6 @@
                             ${analysisResult.environmentAdaptation.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
-
-                    <!-- 核心特质标签 -->
-                    <div class="result-item">
-                        <h3><i>🎯</i> 核心特质标签</h3>
-                        <div class="tags">
-                            ${coreTraitLabels.map(label => `<span class="tag">${label}</span>`).join('')}
-                        </div>
-                    </div>
-
                     <!-- 潜在熵增警告 -->
                     <div class="result-item">
                         <h3><i>⚠️</i> 潜在熵增警告</h3>
@@ -1342,7 +1359,6 @@
                             ${analysisResult.entropyWarning.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
-
                     <!-- 优化策略 -->
                     <div class="result-item">
                         <h3><i>🔧</i> 优化策略</h3>
@@ -1350,26 +1366,230 @@
                             ${analysisResult.optimizationStrategies.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
-
                     <!-- 发展潜力标签 -->
                     <div class="result-item">
                         <h3><i>🚀</i> 发展潜力标签</h3>
                         <div class="tags">
-                            ${potentialLabels.map(label => `<span class="tag">${label}</span>`).join('')}
+                            ${analysisResult.potential.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
-
                     <!-- 关系模式标签 -->
                     <div class="result-item">
                         <h3><i>🤝</i> 关系模式标签</h3>
                         <div class="tags">
-                            ${relationshipLabels.map(label => `<span class="tag">${label}</span>`).join('')}
+                            ${analysisResult.relationshipPatterns.map(label => `<span class="tag">${label}</span>`).join('')}
                         </div>
                     </div>
                 `;
+                // 隐藏当前页面，显示结果页面
+                postTestPage.classList.remove('active');
+                resultsPage.classList.add('active');
+            }
+            // 生成分析报告，所有标签都带有量化指标
+            function generateAnalysis(postTags, innateBigFive, postBigFive, zodiac) {
+                const analysis = {
+                    personalityType: [],
+                    personalityStructure: [],
+                    coreTraits: [],
+                    environmentAdaptation: [],
+                    entropyWarning: [],
+                    optimizationStrategies: [],
+                    potential: [],
+                    relationshipPatterns: []
+                };
+                // --- 人格类型 ---
+                if (postTags.mbti.includes('INTJ') || postTags.mbti.includes('ENTJ')) {
+                    analysis.personalityType.push(`战略型人格`);
+                }
+                if (postTags.mbti.includes('INFP') || postTags.mbti.includes('ENFP')) {
+                    analysis.personalityType.push(`理想型人格`);
+                }
+                if (postTags.mbti.includes('ISTJ') || postTags.mbti.includes('ESTJ')) {
+                    analysis.personalityType.push(`执行型人格`);
+                }
+                if (postTags.mbti.includes('ISFP') || postTags.mbti.includes('ESFP')) {
+                    analysis.personalityType.push(`体验型人格`);
+                }
+                if (analysis.personalityType.length === 0) {
+                    analysis.personalityType.push(`平衡型人格`);
+                }
                 
-                resultsDiv.classList.remove('hidden');
-                document.getElementById('post-test-page').style.display = 'none';
+                // --- 人格结构 ---
+                if (postTags.mbti.includes('INTJ') || postTags.mbti.includes('ENTJ')) {
+                    const systemScore = Math.min(100, 70 + innateBigFive.conscientiousness * 0.4);
+                    analysis.personalityStructure.push(`高系统化思维倾向（系统整合力 ${systemScore}%）`);
+                }
+                if (postTags.mbti.includes('INTJ') || postTags.mbti.includes('ENTJ')) {
+                    const emotionScore = 100 - innateBigFive.agreeableness;
+                    analysis.personalityStructure.push(`架构者本能与情感雷达的动态平衡（情感折叠指数：${emotionScore}%）`);
+                }
+                if (postTags.mbti.includes('INFP') || postTags.mbti.includes('ENFP')) {
+                    const idealismScore = Math.min(100, 60 + innateBigFive.openness * 0.6);
+                    analysis.personalityStructure.push(`理想主义驱动系统（理想化程度：${idealismScore}%）`);
+                }
+                if (postTags.mbti.includes('ISTJ') || postTags.mbti.includes('ESTJ')) {
+                    const routineScore = Math.min(100, 70 + innateBigFive.conscientiousness * 0.5);
+                    analysis.personalityStructure.push(`规则依赖型认知框架（规则依赖度：${routineScore}%）`);
+                }
+                
+                // --- 核心特质 ---
+                if (innateBigFive.openness > 70) {
+                    const creativityScore = innateBigFive.openness;
+                    analysis.coreTraits.push(`高创造力（创造力指数：${creativityScore}%）`);
+                }
+                if (innateBigFive.conscientiousness > 70) {
+                    const disciplineScore = innateBigFive.conscientiousness;
+                    analysis.coreTraits.push(`高度自律（纪律性：${disciplineScore}%）`);
+                }
+                if (innateBigFive.extraversion > 70) {
+                    const energyScore = innateBigFive.extraversion;
+                    analysis.coreTraits.push(`高能量输出（能量指数：${energyScore}%）`);
+                }
+                if (innateBigFive.agreeableness > 70) {
+                    const empathyScore = innateBigFive.agreeableness;
+                    analysis.coreTraits.push(`高共情能力（共情指数：${empathyScore}%）`);
+                }
+                if (innateBigFive.neuroticism > 70) {
+                    const sensitivityScore = innateBigFive.neuroticism;
+                    analysis.coreTraits.push(`高情绪敏感度（敏感度：${sensitivityScore}%）`);
+                }
+                
+                // --- 环境适应力 ---
+                if (postTags.career.includes('程序员')) {
+                    const logicScore = Math.min(100, 60 + innateBigFive.conscientiousness * 0.5);
+                    analysis.environmentAdaptation.push(`逻辑闭环能力 +${logicScore}%`);
+                }
+                if (postTags.career.includes('艺术家')) {
+                    const creativeScore = Math.min(100, 50 + innateBigFive.openness * 0.7);
+                    analysis.environmentAdaptation.push(`非线性创造力通道激活（创造力指数：${creativeScore}%）`);
+                }
+                if (postTags.event.includes('重大失败')) {
+                    const resilienceScore = Math.min(100, 40 + innateBigFive.neuroticism * 0.8);
+                    analysis.environmentAdaptation.push(`逆境适应力 +${resilienceScore}%`);
+                }
+                if (postTags.event.includes('突遇贵人')) {
+                    const opportunityScore = Math.min(100, 50 + innateBigFive.extraversion * 0.6);
+                    analysis.environmentAdaptation.push(`机遇捕捉能力 +${opportunityScore}%`);
+                }
+                if (postTags.class.includes('寒门出身')) {
+                    const struggleScore = Math.min(100, 60 + innateBigFive.neuroticism * 0.5);
+                    analysis.environmentAdaptation.push(`逆境突破能力 +${struggleScore}%`);
+                }
+                if (postTags.class.includes('富裕阶层')) {
+                    const comfortScore = Math.min(100, 40 + innateBigFive.conscientiousness * 0.4);
+                    analysis.environmentAdaptation.push(`舒适区突破力 +${comfortScore}%`);
+                }
+                
+                // --- 潜在熵增警告 ---
+                if (postTags.class.includes('寒门出身')) {
+                    const anxietyScore = Math.min(100, 50 + innateBigFive.neuroticism * 0.6);
+                    analysis.entropyWarning.push(`向上流动焦虑指数：${anxietyScore}%`);
+                }
+                if (postTags.class.includes('富裕阶层')) {
+                    const meaningScore = Math.min(100, 30 + innateBigFive.neuroticism * 0.4);
+                    analysis.entropyWarning.push(`意义感真空风险 +${meaningScore}%`);
+                }
+                if (postTags.event.includes('重大疾病')) {
+                    const stressScore = Math.min(100, 40 + innateBigFive.neuroticism * 0.7);
+                    analysis.entropyWarning.push(`慢性压力积累 +${stressScore}%`);
+                }
+                if (innateBigFive.conscientiousness < 40) {
+                    const fragilityScore = 100 - innateBigFive.conscientiousness;
+                    analysis.entropyWarning.push(`目标执行链条脆弱（脆弱度：${fragilityScore}%）`);
+                }
+                if (innateBigFive.neuroticism > 70) {
+                    const criticalScore = innateBigFive.neuroticism;
+                    analysis.entropyWarning.push(`神经质指数临界值 ${criticalScore}% (高风险)`);
+                }
+                
+                // --- 优化策略 ---
+                if (postTags.event.includes('突遇贵人')) {
+                    const networkScore = Math.min(100, 70 + innateBigFive.agreeableness * 0.4);
+                    analysis.optimizationStrategies.push(`人脉杠杆利用率 +${networkScore}%`);
+                }
+                if (postTags.time.includes('夜间活跃')) {
+                    const inspirationScore = Math.min(100, 50 + innateBigFive.openness * 0.6);
+                    analysis.optimizationStrategies.push(`灵感峰值利用率 +${inspirationScore}%`);
+                }
+                if (postTags.digital.includes('表情包达人')) {
+                    const expressionScore = Math.min(100, 40 + innateBigFive.openness * 0.7);
+                    analysis.optimizationStrategies.push(`情感表达编码效率 +${expressionScore}%`);
+                }
+                if (innateBigFive.conscientiousness < 50) {
+                    const focusScore = Math.min(100, 30 + innateBigFive.conscientiousness * 0.5);
+                    analysis.optimizationStrategies.push(`注意力管理系统升级（专注力提升：${focusScore}%）`);
+                }
+                
+                // --- 发展潜力 ---
+                if (innateBigFive.openness > 60 && innateBigFive.conscientiousness > 50) {
+                    const innovationScore = Math.min(100, 60 + innateBigFive.openness * 0.5);
+                    analysis.potential.push(`创新突破潜力（创新潜力：${innovationScore}%）`);
+                }
+                if (innateBigFive.extraversion > 60 && innateBigFive.agreeableness > 50) {
+                    const leadershipScore = Math.min(100, 50 + innateBigFive.extraversion * 0.6);
+                    analysis.potential.push(`领导力发展潜力（领导力指数：${leadershipScore}%）`);
+                }
+                if (innateBigFive.neuroticism > 50 && innateBigFive.openness > 60) {
+                    const artisticScore = Math.min(100, 70 + innateBigFive.neuroticism * 0.4);
+                    analysis.potential.push(`艺术创作潜力（艺术潜能：${artisticScore}%）`);
+                }
+                if (innateBigFive.conscientiousness > 60 && innateBigFive.extraversion > 50) {
+                    const entrepreneurialScore = Math.min(100, 60 + innateBigFive.conscientiousness * 0.4);
+                    analysis.potential.push(`创业成功潜力（创业潜力：${entrepreneurialScore}%）`);
+                }
+                
+                // --- 关系模式 ---
+                if (innateBigFive.agreeableness > 70 && innateBigFive.neuroticism < 50) {
+                    const harmonyScore = Math.min(100, 70 + innateBigFive.agreeableness * 0.3);
+                    analysis.relationshipPatterns.push(`和谐型关系模式（和谐度：${harmonyScore}%）`);
+                }
+                if (innateBigFive.extraversion > 70 && innateBigFive.conscientiousness < 50) {
+                    const spontaneityScore = Math.min(100, 60 + innateBigFive.extraversion * 0.4);
+                    analysis.relationshipPatterns.push(`即兴型关系模式（即兴指数：${spontaneityScore}%）`);
+                }
+                if (innateBigFive.neuroticism > 70 && innateBigFive.agreeableness > 60) {
+                    const depthScore = Math.min(100, 60 + innateBigFive.neuroticism * 0.3);
+                    analysis.relationshipPatterns.push(`深度型关系模式（深度：${depthScore}%）`);
+                }
+                if (innateBigFive.conscientiousness > 70 && innateBigFive.extraversion < 50) {
+                    const stabilityScore = Math.min(100, 70 + innateBigFive.conscientiousness * 0.3);
+                    analysis.relationshipPatterns.push(`稳定型关系模式（稳定性：${stabilityScore}%）`);
+                }
+                
+                // 添加通用标签作为兜底，也进行量化
+                if (analysis.personalityType.length === 0) {
+                    analysis.personalityType.push(`复合型人格`);
+                }
+                if (analysis.personalityStructure.length === 0) {
+                    analysis.personalityStructure.push(`精密编码的情感表达机制（编码复杂度：75%）`);
+                    analysis.personalityStructure.push(`风险预判与机会捕捉双重驱动（平衡指数：60%）`);
+                }
+                if (analysis.coreTraits.length === 0) {
+                    analysis.coreTraits.push(`适应性人格特征（适应性：65%）`);
+                    analysis.coreTraits.push(`情境依赖型行为模式（灵活性：70%）`);
+                }
+                if (analysis.environmentAdaptation.length === 0) {
+                    analysis.environmentAdaptation.push(`跨界适应力 +${Math.min(100, 40 + innateBigFive.openness * 0.7)}%`);
+                    analysis.environmentAdaptation.push(`情感表达畅通度 -${Math.max(10, 25 - innateBigFive.agreeableness * 0.3)}%`);
+                }
+                if (analysis.entropyWarning.length === 0) {
+                    analysis.entropyWarning.push(`心流体验减压 -${Math.min(80, 20 + innateBigFive.openness * 0.8)}%`);
+                }
+                if (analysis.optimizationStrategies.length === 0) {
+                    analysis.optimizationStrategies.push(`建立情感直输通道（降低编码能耗 ${Math.max(10, 30 - innateBigFive.neuroticism * 0.4)}%）`);
+                    analysis.optimizationStrategies.push(`实施反完美主义训练计划（减压 ${Math.max(15, 25 - innateBigFive.neuroticism * 0.3)}%）`);
+                    analysis.optimizationStrategies.push(`构建多维自我价值锚点（潜力值：★★★★☆）`);
+                }
+                if (analysis.potential.length === 0) {
+                    analysis.potential.push(`综合发展潜力（潜力指数：★★★☆☆）`);
+                    analysis.potential.push(`渐进式成长路径（成长率：60%）`);
+                }
+                if (analysis.relationshipPatterns.length === 0) {
+                    analysis.relationshipPatterns.push(`平衡型关系模式（平衡指数：55%）`);
+                    analysis.relationshipPatterns.push(`情境适应型互动风格（适应性：65%）`);
+                }
+                
+                return analysis;
             }
         });
     </script>
