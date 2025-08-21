@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>四液质花瓣力学模型（随风摇曳版）</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+           background:#f5f6fa; margin:0; padding:24px; }
+    .wrap { max-width: 1120px; margin:auto; background:#fff; border-radius:14px;
+            box-shadow: 0 6px 24px rgba(0,0,0,.08); overflow:hidden; }
+    header { padding:18px 20px; border-bottom:1px solid #eee; }
+    h1 { font-size:18px; margin:0; }
+    .hint { padding:10px 16px; font-size:12px; color:#666; border-top:1px dashed #e6e6e6; background:#fafafa; }
+    svg { width:100%; height:820px; display:block; }
+    .label { font-size:12px; text-anchor:middle; pointer-events:none; fill:#333; }
+    .petal { cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header><h1>🌸 四液质花瓣力学模型（随风摇曳版）</h1></header>
+    <svg id="stage" viewBox="0 0 1120 820"></svg>
+    <div class="hint">
+      点击子标签切换实心/空心；子标签持续漂浮+呼吸；主花瓣随激活数量缩放并轻微摇摆；整朵花会随风左右摆动。
+    </div>
+  </div>
+
+  <script>
+  // ================== 数据 ==================
+  const temperamentGroups = {
+    sanguine:   ["社交","活泼","情绪波动","精力旺盛","乐观","健谈","随和","寻求刺激"],
+    choleric:   ["果断","领导力","野心","自信","竞争性","目标导向","急躁","支配性"],
+    melancholic:["敏感","温柔","封闭","共情","完美主义","深思熟虑","悲观","理想主义"],
+    phlegmatic: ["冷静","耐心","稳定","可靠","平和","规律","避免冲突","务实","物质主导","被动","内敛","非黑即白"]
+  };
+  const names  = { sanguine:"多血质", choleric:"胆汁质", melancholic:"抑郁质", phlegmatic:"粘液质" };
+  const colors = { sanguine:"#ff7f50", choleric:"#1e90ff", melancholic:"#9370db", phlegmatic:"#3cb371" };
+
+  // ================== 画布与锚点 ==================
+  const svg = d3.select("#stage");
+  const W = 1120, H = 820, cx = W/2, cy = H/2;
+  const coreRadius = 210;
+  const anchors = {
+    melancholic: { x: cx, y: cy - coreRadius, angle: -90 },
+    phlegmatic:  { x: cx, y: cy + coreRadius, angle:  90 },
+    sanguine:    { x: cx - coreRadius, y: cy, angle:  180 },
+    choleric:    { x: cx + coreRadius, y: cy, angle:  0 }
+  };
+
+  // ================== 节点 ==================
+  const nodes = [];
+  const links = [];
+
+  // 主花瓣
+  Object.keys(anchors).forEach(k=>{
+    const a = anchors[k];
+    nodes.push({
+      id: "core-"+k, kind:"core", key:k, name:names[k],
+      x:a.x, y:a.y, vx:0, vy:0,
+      baseRx: 95, baseRy: 64, rx:95, ry:64,
+      targetRx:95, targetRy:64,
+      color: colors[k], fixed:true, swayPhase: Math.random()*Math.PI*2
+    });
+  });
+
+  // 子花瓣
+  const orbitR = 160, childRx = 36, childRy = 18;
+  Object.keys(temperamentGroups).forEach(k=>{
+    const list = temperamentGroups[k];
+    const step = Math.PI/(list.length+1);
+    list.forEach((tag,i)=>{
+      const theta = (anchors[k].angle-90)*Math.PI/180 + (i+1)*step;
+      const x = anchors[k].x + Math.cos(theta)*orbitR;
+      const y = anchors[k].y + Math.sin(theta)*orbitR;
+      nodes.push({
+        id:`tag-${k}-${i}`, kind:"tag", key:k, name:tag,
+        x, y, vx:0, vy:0,
+        rx:childRx, ry:childRy, rx0:childRx, ry0:childRy,
+        targetRx:childRx, targetRy:childRy,
+        thetaBase: theta, phase: Math.random()*Math.PI*2, speed: 0.001 + Math.random()*0.001,
+        color: colors[k], active:false, breathPhase: Math.random()*Math.PI*2
+      });
+      links.push({ source:"core-"+k, target:`tag-${k}-${i}` });
+    });
+  });
+
+  // ================== SVG ==================
+  const gFlower = svg.append("g"); // 整个花朵组（随风摇摆）
+  const gLinks  = gFlower.append("g").attr("stroke","#eee").attr("stroke-width",1.2).attr("opacity",0.6);
+  const gNodes  = gFlower.append("g");
+  const gLabels = gFlower.append("g");
+
+  const linkSel = gLinks.selectAll("line").data(links).enter().append("line");
+
+  const nodeSel = gNodes.selectAll("ellipse").data(nodes).enter().append("ellipse")
+    .attr("class","petal")
+    .attr("fill", d => d.kind==="core" ? d.color : "transparent")
+    .attr("stroke", d => d.kind==="core" ? "none" : d.color)
+    .attr("stroke-width", d => d.kind==="core" ? 0 : 2)
+    .attr("opacity", 0.95)
+    .on("click", function(e,d){
+      if(d.kind!=="tag") return;
+      d.active = !d.active;
+      d.rx0 = d.active ? childRx+8 : childRx;
+      d.ry0 = d.active ? childRy+6 : childRy;
+      d.targetRx = d.rx0;
+      d.targetRy = d.ry0;
+      d3.select(this)
+        .attr("fill", d.active ? d.color : "transparent")
+        .attr("stroke-width", d.active ? 0 : 2);
+      updateCoreSizes();
+      refreshCollide();
+    });
+
+  const labelSel = gLabels.selectAll("text").data(nodes).enter().append("text")
+    .attr("class","label")
+    .style("font-size", d => d.kind==="core" ? "14px" : "12px")
+    .text(d => d.name);
+
+  // ================== 主花瓣动态缩放 ==================
+  function updateCoreSizes(){
+    const counts = { sanguine:0, choleric:0, melancholic:0, phlegmatic:0 };
+    nodes.forEach(n => { if(n.kind==="tag" && n.active) counts[n.key]++; });
+    nodes.forEach(n=>{
+      if(n.kind==="core"){
+        const c = counts[n.key];
+        n.targetRx = n.baseRx + c*12;
+        n.targetRy = n.baseRy + c*8;
+      }
+    });
+  }
+
+  // ================== 漂浮目标 ==================
+  function driftTarget(n){
+    if(n.kind!=="tag") return {x:n.x,y:n.y};
+    n.phase += n.speed;
+    const theta = n.thetaBase + Math.sin(n.phase)*0.28;
+    const r = orbitR + Math.cos(n.phase*0.8)*12;
+    const a = anchors[n.key];
+    return { x: a.x + Math.cos(theta)*r, y: a.y + Math.sin(theta)*r };
+  }
+
+  // ================== 呼吸动画 ==================
+  function applyBreath(n){
+    if(n.kind!=="tag") return;
+    n.breathPhase += 0.01;
+    const scale = 1 + 0.08*Math.sin(n.breathPhase);
+    n.targetRx = n.rx0 * scale;
+    n.targetRy = n.ry0 * scale;
+  }
+
+  // ================== 碰撞连续变形 ==================
+  function applySqueeze(){
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const a=nodes[i], b=nodes[j];
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const dist=Math.hypot(dx,dy);
+        const minDist=(Math.max(a.rx,a.ry)+Math.max(b.rx,b.ry))*0.95;
+        if(dist<minDist){
+          const overlap=(minDist-dist)/minDist;
+          if(a.kind!=="core"){
+            a.targetRx = a.rx0*(1-overlap*0.15);
+            a.targetRy = a.ry0*(1-overlap*0.15);
+          }
+          if(b.kind!=="core"){
+            b.targetRx = b.rx0*(1-overlap*0.15);
+            b.targetRy = b.ry0*(1-overlap*0.15);
+          }
+        }
+      }
+    }
+  }
+
+  // ================== 柔和回弹 ==================
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function updateSizes(){
+    nodes.forEach(n=>{
+      n.rx = lerp(n.rx, n.targetRx, 0.1);
+      n.ry = lerp(n.ry, n.targetRy, 0.1);
+    });
+  }
+
+  // ================== 力导向 ==================
+  const forceToAnchor = () => {
+    nodes.forEach(n=>{
+      if(n.kind==="core"){
+        const a = anchors[n.key];
+        n.vx += (a.x - n.x)*0.15;
+        n.vy += (a.y - n.y)*0.15;
+      } else {
+        const t = driftTarget(n);
+        n.vx += (t.x - n.x)*0.02;
+        n.vy += (t.y - n.y)*0.02;
+      }
+    });
+  };
+  let collide = d3.forceCollide().radius(d => Math.max(d.rx,d.ry)*0.95).iterations(1);
+  const charge = d3.forceManyBody().strength(d => d.kind==="core"? -60 : -15);
+
+  const sim = d3.forceSimulation(nodes)
+    .alpha(0.9)
+    .alphaDecay(0.02)
+    .velocityDecay(0.25)
+    .force("charge", charge)
+    .force("collide", collide)
+    .on("tick", ticked);
+
+  function refreshCollide(){
+    collide.radius(d => Math.max(d.rx,d.ry)*0.95);
+    sim.alpha(0.6).restart();
+  }
+
+  // ================== 随风摇摆 ==================
+  let globalPhase = 0;
+  function applyWindyMotion(){
+    globalPhase += 0.003;
+    const swayX = Math.sin(globalPhase) * 20;   // 整个花左右摆动
+    const swayY = Math.cos(globalPhase*0.7) * 10; // 上下轻微起伏
+    gFlower.attr("transform", `translate(${swayX},${swayY})`);
+  }
+
+  // ================== tick ==================
+  function ticked(){
+    forceToAnchor();
+    nodes.forEach(n=>applyBreath(n));
+    applySqueeze();
+    updateSizes();
+    nodeSel.attr("cx", d=>d.x).attr("cy", d=>d.y).attr("rx", d=>d.rx).attr("ry", d=>d.ry);
+    labelSel.attr("x", d=>d.x).attr("y", d=>d.y+4);
+    linkSel
+      .attr("x1", d=>getNode(d.source).x).attr("y1", d=>getNode(d.source).y)
+      .attr("x2", d=>getNode(d.target).x).attr("y2", d=>getNode(d.target).y);
+    applyWindyMotion();
+  }
+
+  function getNode(idOrObj){ return (typeof idOrObj==="string") ? nodes.find(n=>n.id===idOrObj) : idOrObj; }
+
+  updateCoreSizes();
+  </script>
+</body>
+</html>
