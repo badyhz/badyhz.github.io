@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>人格花瓣双环图（柔和动画版）</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+           background:#f5f6fa; margin:0; padding:24px; }
+    .wrap { max-width: 1800px; margin:auto; background:#fff; border-radius:14px;
+            box-shadow: 0 6px 24px rgba(0,0,0,.08); overflow:hidden; }
+    header { padding:18px 20px; border-bottom:1px solid #eee; }
+    h1 { font-size:18px; margin:0; }
+    .hint { padding:10px 16px; font-size:12px; color:#666; border-top:1px dashed #e6e6e6; background:#fafafa; }
+    svg { width:100%; height:1200px; display:block; }
+    .label { font-size:11px; text-anchor:middle; pointer-events:none; fill:#333; dominant-baseline:middle; }
+    .core-label { font-size:13px; font-weight:bold; }
+    .petal { cursor:pointer; transition: fill 0.25s, stroke-width 0.25s; }
+    .core { pointer-events:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header><h1>🌸 人格花瓣双环图（慢速柔和动画 + 避让 + 果冻回弹）</h1></header>
+    <svg id="stage" viewBox="0 0 1800 1200">
+      <defs>
+        <radialGradient id="bgGradient" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stop-color="#ffd6e8" stop-opacity="0.6"/>
+          <stop offset="50%" stop-color="#d6eaff" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#bgGradient)" opacity="0.35"/>
+      <g id="flower"></g>
+    </svg>
+    <div class="hint">
+      ✅ 内环主标签；✅ 外环子标签均匀分布；✅ 子标签慢速浮动；✅ 柔和避让；✅ 果冻回弹。
+    </div>
+  </div>
+
+  <script>
+  const W=1800,H=1200,cx=W/2,cy=H/2;
+  const coreRingR=300, outerRingR=540;
+
+  const svg=d3.select("#stage");
+  const gFlower=svg.select("#flower");
+  const gNodes=gFlower.append("g"), gLabels=gFlower.append("g");
+
+  const modules={
+    "人格类型标签":["类型识别精度（72%）","情绪驱动倾向（63%）","决策速度偏好（0.82s）","感知敏锐度（68%）","直觉信号强度（74%）","理性-感性平衡（0.58）","风险容忍水平（61%）","行为一致性（69%）"],
+    "人格结构":["内向/外向比例（46%）","情绪稳定维度（64%）","冲动控制能力（57%）","自我觉察水平（71%）","意志力储备（62%）","行为灵活度（66%）","价值观内聚性（59%）","适应-抗拒区间（41%）"],
+    "核心特质标签":["开放性指数（72%）","尽责性水平（69%）","外向性得分（63%）","宜人性指标（77%）","神经质风险（55%）","适应性人格特征（65%）","情境依赖型行为模式（70%）","自律维持力（62%）"],
+    "环境适应力":["压力恢复速度（68%）","变化应对能力（61%）","资源整合效率（72%）","社会适应指数（74%）","逻辑闭环能力（74.5%）","环境扫描精度（66%）","习惯重建速度（57%）","持续优化倾向（63%）"],
+    "潜在熵增警告":["情绪失衡风险（58%）","认知偏差频率（47%）","行为僵化程度（62%）","冲突升级概率（44%）","目标执行链条脆弱（71%）","注意力分散水平（55%）","动机衰减曲线（52%）","自我矛盾频率（48%）"],
+    "优化策略":["情绪调节路径（64%）","认知重构效能（67%）","行为训练反馈率（72%）","关系修复指数（63%）","情感表达编码效率（59.6%）","注意力管理系统升级（44.5%）","学习迁移效率（62%）","自我激励机制（66%）"],
+    "发展潜力标签":["创造力潜能（68%）","领导力成长值（71%）","共情力拓展度（64%）","抗压能力提升曲线（69%）","综合发展潜力（★★★☆☆）","渐进式成长路径（60%）","知识整合深度（63%）","学习速度变化率（57%）"],
+    "关系模式标签":["依赖型关系强度（61%）","独立型关系维度（59%）","合作型关系模式（67%）","对抗型关系倾向（44%）","平衡型关系模式（55%）","情境适应型互动风格（65%）","沟通透明度（62%）","信任构建速度（71%）"]
+  };
+
+  const colors=["#ff7f50","#1e90ff","#9370db","#3cb371","#ff69b4","#ffa500","#20b2aa","#708090"];
+  const moduleOrder=Object.keys(modules);
+  const angleStep=(2*Math.PI)/moduleOrder.length;
+
+  function measureTextWidth(t,fs=11){
+    const temp=svg.append("text").style("font-size",fs+"px").attr("visibility","hidden").text(t);
+    const w=temp.node().getBBox().width; temp.remove(); return w;
+  }
+  function ellipseSizeForText(t,fs=11,px=16,py=10){
+    const w=measureTextWidth(t,fs); return {rx:w/2+px, ry:fs*0.85+py};
+  }
+
+  const anchors={},nodes=[];
+  moduleOrder.forEach((m,i)=>{
+    anchors[m]={x:cx+Math.cos(i*angleStep)*coreRingR,y:cy+Math.sin(i*angleStep)*coreRingR,angle:i*angleStep};
+  });
+
+  // 内环主标签
+  moduleOrder.forEach((m,mi)=>{
+    const a=anchors[m],c=colors[mi%colors.length];
+    const baseCore=ellipseSizeForText(m,13,18,12);
+    nodes.push({id:`core-${mi}`,kind:"core",key:m,name:m,color:c,x:a.x,y:a.y,
+                rx:Math.max(100,baseCore.rx),ry:Math.max(60,baseCore.ry)});
+  });
+
+  // 外环子标签
+  const subs=[];
+  moduleOrder.forEach((m,mi)=>{
+    const sub=modules[m],c=colors[mi%colors.length];
+    sub.forEach((txt,i)=>subs.push({m,mi,c,txt}));
+  });
+
+  subs.forEach((s,i)=>{
+    const th=(i/subs.length)*2*Math.PI; // 均匀分布
+    const posX=cx+Math.cos(th)*outerRingR;
+    const posY=cy+Math.sin(th)*outerRingR;
+    const sz=ellipseSizeForText(s.txt,11,16,10);
+    nodes.push({
+      id:`tag-${s.mi}-${i}`,kind:"tag",key:s.m,name:s.txt,color:s.c,
+      baseTheta:th,x:posX,y:posY,
+      rx:sz.rx,ry:sz.ry,rx0:sz.rx,ry0:sz.ry,
+      active:false,floatPhase:Math.random()*6.28
+    });
+  });
+
+  const nodeSel=gNodes.selectAll("ellipse").data(nodes).enter().append("ellipse")
+    .attr("class",d=>`petal ${d.kind}`)
+    .attr("fill",d=>d.kind==="core"?d.color:"transparent")
+    .attr("stroke",d=>d.kind==="core"?"none":d.color)
+    .attr("stroke-width",d=>d.kind==="core"?0:2)
+    .on("click",function(e,d){
+      if(d.kind!=="tag")return;
+      d.active=!d.active;
+      d.rx=d.active?d.rx0*1.2:d.rx0;
+      d.ry=d.active?d.ry0*1.2:d.ry0;
+      d3.select(this).attr("fill",d.active?d.color:"transparent").attr("stroke-width",d.active?0:2);
+    });
+
+  const labelSel=gLabels.selectAll("text").data(nodes).enter().append("text")
+    .attr("class",d=>d.kind==="core"?"label core-label":"label").text(d=>d.name);
+
+  // 动画循环
+  d3.timer(()=>{
+    // 慢速浮动 + 平滑过渡
+    nodes.forEach(n=>{
+      if(n.kind==="tag"){
+        n.floatPhase += 0.005; // 更慢
+        const radialOffset=Math.sin(n.floatPhase)*4;
+        const tangentialOffset=Math.cos(n.floatPhase*0.7)*2;
+        const r=outerRingR+radialOffset;
+        const targetX=cx+Math.cos(n.baseTheta)*r+Math.cos(n.baseTheta+Math.PI/2)*tangentialOffset;
+        const targetY=cy+Math.sin(n.baseTheta)*r+Math.sin(n.baseTheta+Math.PI/2)*tangentialOffset;
+        n.x += (targetX-n.x)*0.05; // 平滑移动
+        n.y += (targetY-n.y)*0.05;
+      }
+    });
+
+    // 柔和避让
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const a=nodes[i],b=nodes[j];
+        if(a.kind==="core"||b.kind==="core") continue;
+        const dx=a.x-b.x,dy=a.y-b.y,dist=Math.sqrt(dx*dx+dy*dy);
+        const minDist=Math.max(a.rx,a.ry)+Math.max(b.rx,b.ry)+6;
+        if(dist<minDist && dist>0){
+          const push=(minDist-dist)*0.1; // 更温和
+          const ux=dx/dist,uy=dy/dist;
+          a.x+=ux*push; a.y+=uy*push;
+          b.x-=ux*push; b.y-=uy*push;
+        }
+      }
+    }
+
+    // 果冻回弹
+    nodes.forEach(n=>{
+      if(n.kind==="tag" && !n.active){
+        n.rx+=(n.rx0-n.rx)*0.05;
+        n.ry+=(n.ry0-n.ry)*0.05;
+      }
+    });
+
+    ticked();
+  });
+
+  function ticked(){
+    nodeSel.attr("cx",d=>d.x).attr("cy",d=>d.y).attr("rx",d=>d.rx).attr("ry",d=>d.ry);
+    labelSel.attr("x",d=>d.x).attr("y",d=>d.y);
+  }
+  ticked();
+  </script>
+</body>
+</html>
