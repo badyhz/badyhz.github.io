@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>阴阳鱼双图展示（背景版）</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      background:#222;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      margin:0;
+    }
+    .yin-yang-container {
+      position:relative;
+      width:800px; height:800px;
+      border-radius:50%;
+      /* 阴阳鱼背景 */
+      background: radial-gradient(circle at 50% 25%, #fff 10%, #000 11%) no-repeat,
+                  radial-gradient(circle at 50% 75%, #000 10%, #fff 11%) no-repeat,
+                  linear-gradient(to bottom, #fff 50%, #000 50%);
+      background-size:100% 100%;
+      overflow:hidden;
+    }
+    .chart {
+      position:absolute;
+      width:100%; height:50%;
+    }
+    #stage1 { top:0; }   /* 上半：人格花瓣双环图 */
+    #stage2 { bottom:0; }/* 下半：四液质花瓣模型 */
+    .label { font-family: system-ui; }
+  </style>
+</head>
+<body>
+  <div class="yin-yang-container">
+    <svg id="stage1" viewBox="0 0 1800 1200" class="chart"></svg>
+    <svg id="stage2" viewBox="0 0 1120 820" class="chart"></svg>
+  </div>
+
+  <!-- ====== 人格花瓣双环图（houdonghua） ====== -->
+  <script>
+  (function(){
+    const W=1800,H=1200,cx=W/2,cy=H/2;
+    const coreRingR=300, outerRingR=540;
+    const svg=d3.select("#stage1");
+    const gFlower=svg.append("g");
+    const gNodes=gFlower.append("g"), gLabels=gFlower.append("g");
+
+    const modules={
+      "人格类型标签":["类型识别精度（72%）","情绪驱动倾向（63%）","决策速度偏好（0.82s）","感知敏锐度（68%）","直觉信号强度（74%）","理性-感性平衡（0.58）","风险容忍水平（61%）","行为一致性（69%）"],
+      "人格结构":["内向/外向比例（46%）","情绪稳定维度（64%）","冲动控制能力（57%）","自我觉察水平（71%）","意志力储备（62%）","行为灵活度（66%）","价值观内聚性（59%）","适应-抗拒区间（41%）"],
+      "核心特质标签":["开放性指数（72%）","尽责性水平（69%）","外向性得分（63%）","宜人性指标（77%）","神经质风险（55%）","适应性人格特征（65%）","情境依赖型行为模式（70%）","自律维持力（62%）"],
+      "环境适应力":["压力恢复速度（68%）","变化应对能力（61%）","资源整合效率（72%）","社会适应指数（74%）","逻辑闭环能力（74.5%）","环境扫描精度（66%）","习惯重建速度（57%）","持续优化倾向（63%）"],
+      "潜在熵增警告":["情绪失衡风险（58%）","认知偏差频率（47%）","行为僵化程度（62%）","冲突升级概率（44%）","目标执行链条脆弱（71%）","注意力分散水平（55%）","动机衰减曲线（52%）","自我矛盾频率（48%）"],
+      "优化策略":["情绪调节路径（64%）","认知重构效能（67%）","行为训练反馈率（72%）","关系修复指数（63%）","情感表达编码效率（59.6%）","注意力管理系统升级（44.5%）","学习迁移效率（62%）","自我激励机制（66%）"],
+      "发展潜力标签":["创造力潜能（68%）","领导力成长值（71%）","共情力拓展度（64%）","抗压能力提升曲线（69%）","综合发展潜力（★★★☆☆）","渐进式成长路径（60%）","知识整合深度（63%）","学习速度变化率（57%）"],
+      "关系模式标签":["依赖型关系强度（61%）","独立型关系维度（59%）","合作型关系模式（67%）","对抗型关系倾向（44%）","平衡型关系模式（55%）","情境适应型互动风格（65%）","沟通透明度（62%）","信任构建速度（71%）"]
+    };
+
+    const colors=["#ff7f50","#1e90ff","#9370db","#3cb371","#ff69b4","#ffa500","#20b2aa","#708090"];
+    const moduleOrder=Object.keys(modules);
+    const angleStep=(2*Math.PI)/moduleOrder.length;
+
+    function measureTextWidth(t,fs=11){
+      const temp=svg.append("text").style("font-size",fs+"px").attr("visibility","hidden").text(t);
+      const w=temp.node().getBBox().width; temp.remove(); return w;
+    }
+    function ellipseSizeForText(t,fs=11,px=16,py=10){
+      const w=measureTextWidth(t,fs); return {rx:w/2+px, ry:fs*0.85+py};
+    }
+
+    const anchors={},nodes=[];
+    moduleOrder.forEach((m,i)=>{
+      anchors[m]={x:cx+Math.cos(i*angleStep)*coreRingR,y:cy+Math.sin(i*angleStep)*coreRingR,angle:i*angleStep};
+    });
+
+    moduleOrder.forEach((m,mi)=>{
+      const a=anchors[m],c=colors[mi%colors.length];
+      const baseCore=ellipseSizeForText(m,13,18,12);
+      nodes.push({id:`core-${mi}`,kind:"core",key:m,name:m,color:c,x:a.x,y:a.y,
+                  rx:Math.max(100,baseCore.rx),ry:Math.max(60,baseCore.ry)});
+    });
+
+    const subs=[];
+    moduleOrder.forEach((m,mi)=>{
+      const sub=modules[m],c=colors[mi%colors.length];
+      sub.forEach((txt,i)=>subs.push({m,mi,c,txt}));
+    });
+
+    subs.forEach((s,i)=>{
+      const th=(i/subs.length)*2*Math.PI;
+      const posX=cx+Math.cos(th)*outerRingR;
+      const posY=cy+Math.sin(th)*outerRingR;
+      const sz=ellipseSizeForText(s.txt,11,16,10);
+      nodes.push({
+        id:`tag-${s.mi}-${i}`,kind:"tag",key:s.m,name:s.txt,color:s.c,
+        baseTheta:th,x:posX,y:posY,
+        rx:sz.rx,ry:sz.ry,rx0:sz.rx,ry0:sz.ry,
+        active:false,floatPhase:Math.random()*6.28
+      });
+    });
+
+    const nodeSel=gNodes.selectAll("ellipse").data(nodes).enter().append("ellipse")
+      .attr("class",d=>`petal ${d.kind}`)
+      .attr("fill",d=>d.kind==="core"?d.color:"transparent")
+      .attr("stroke",d=>d.kind==="core"?"none":d.color)
+      .attr("stroke-width",d=>d.kind==="core"?0:2)
+      .on("click",function(e,d){
+        if(d.kind!=="tag")return;
+        d.active=!d.active;
+        d.rx=d.active?d.rx0*1.2:d.rx0;
+        d.ry=d.active?d.ry0*1.2:d.ry0;
+        d3.select(this).attr("fill",d.active?d.color:"transparent").attr("stroke-width",d.active?0:2);
+      });
+
+    const labelSel=gLabels.selectAll("text").data(nodes).enter().append("text")
+      .attr("class",d=>d.kind==="core"?"label core-label":"label").text(d=>d.name);
+
+    d3.timer(()=>{
+      nodes.forEach(n=>{
+        if(n.kind==="tag"){
+          n.floatPhase += 0.005;
+          const radialOffset=Math.sin(n.floatPhase)*4;
+          const tangentialOffset=Math.cos(n.floatPhase*0.7)*2;
+          const r=outerRingR+radialOffset;
+          const targetX=cx+Math.cos(n.baseTheta)*r+Math.cos(n.baseTheta+Math.PI/2)*tangentialOffset;
+          const targetY=cy+Math.sin(n.baseTheta)*r+Math.sin(n.baseTheta+Math.PI/2)*tangentialOffset;
+          n.x += (targetX-n.x)*0.05;
+          n.y += (targetY-n.y)*0.05;
+        }
+      });
+
+      for(let i=0;i<nodes.length;i++){
+        for(let j=i+1;j<nodes.length;j++){
+          const a=nodes[i],b=nodes[j];
+          if(a.kind==="core"||b.kind==="core") continue;
+          const dx=a.x-b.x,dy=a.y-b.y,dist=Math.sqrt(dx*dx+dy*dy);
+          const minDist=Math.max(a.rx,a.ry)+Math.max(b.rx,b.ry)+6;
+          if(dist<minDist && dist>0){
+            const push=(minDist-dist)*0.1;
+            const ux=dx/dist,uy=dy/dist;
+            a.x+=ux*push; a.y+=uy*push;
+            b.x-=ux*push; b.y-=uy*push;
+          }
+        }
+      }
+
+      nodes.forEach(n=>{
+        if(n.kind==="tag" && !n.active){
+          n.rx+=(n.rx0-n.rx)*0.05;
+          n.ry+=(n.ry0-n.ry)*0.05;
+        }
+      });
+
+      ticked();
+    });
+
+    function ticked(){
+      nodeSel.attr("cx",d=>d.x).attr("cy",d=>d.y).attr("rx",d=>d.rx).attr("ry",d=>d.ry);
+      labelSel.attr("x",d=>d.x).attr("y",d=>d.y);
+    }
+    ticked();
+  })();
+  </script>
+
+  <!-- ====== 四液质花瓣力学模型（donghua） ====== -->
+  <script>
+  (function(){
+    const temperamentGroups = {
+      sanguine:   ["社交","活泼","情绪波动","精力旺盛","乐观","健谈","随和","寻求刺激"],
+      choleric:   ["果断","领导力","野心","自信","竞争性","目标导向","急躁","支配性"],
+      melancholic:["敏感","温柔","封闭","共情","完美主义","深思熟虑","悲观","理想主义"],
+      phlegmatic: ["冷静","耐心","稳定","可靠","平和","规律","避免冲突","务实","物质主导","被动","内敛","非黑即白"]
+    };
+    const names  = { sanguine:"多血质", choleric:"胆汁质", melancholic:"抑郁质", phlegmatic:"粘液质" };
+    const colors = { sanguine:"#ff7f50", choleric:"#1e90ff", melancholic:"#9370db", phlegmatic:"#3cb371" };
+
+    const svg = d3.select("#stage2");
+    const W = 1120, H = 820, cx = W/2, cy = H/2;
+    const coreRadius = 210;
+    const anchors = {
+      melancholic: { x: cx, y: cy - coreRadius, angle: -90 },
+      phlegmatic:  { x: cx, y: cy + coreRadius, angle:  90 },
+      sanguine:    { x: cx - coreRadius, y: cy, angle:  180 },
+      choleric:    { x: cx + coreRadius, y: cy, angle:  0 }
+    };
+
+    const nodes = [];
+    const links = [];
+
+    Object.keys(anchors).forEach(k=>{
+      const a = anchors[k];
+      nodes.push({
+        id: "core-"+k, kind:"core", key:k, name:names[k],
+        x:a.x, y:a.y, vx:0, vy:0,
+        baseRx: 95, baseRy: 64, rx:95, ry:64,
+        targetRx:95, targetRy:64,
+        color: colors[k], fixed:true, swayPhase: Math.random()*Math.PI*2
+      });
+    });
+
+    const orbitR = 160, childRx = 36, childRy = 18;
+    Object.keys(temperamentGroups).forEach(k=>{
+      const list = temperamentGroups[k];
+      const step = Math.PI/(list.length+1);
+      list.forEach((tag,i)=>{
+        const theta = (anchors[k].angle-90)*Math.PI/180 + (i+1)*step;
+        const x = anchors[k].x + Math.cos(theta)*orbitR;
+        const y = anchors[k].y + Math.sin(theta)*orbitR;
+        nodes.push({
+          id:`tag-${k}-${i}`, kind:"tag", key:k, name:tag,
+          x, y, vx:0, vy:0,
+          rx:childRx, ry:childRy, rx0:childRx, ry0:childRy,
+          targetRx:childRx, targetRy:childRy,
+          thetaBase: theta, phase: Math.random()*Math.PI*2, speed: 0.001 + Math.random()*0.001,
+          color: colors[k], active:false, breathPhase: Math.random()*Math.PI*2
+        });
+        links.push({ source:"core-"+k, target:`tag-${k}-${i}` });
+      });
+    });
+
+    const gFlower = svg.append("g");
+    const gLinks  = gFlower.append("g").attr("stroke","#eee").attr("stroke-width",1.2).attr("opacity",0.6);
+    const gNodes  = gFlower.append("g");
+    const gLabels = gFlower.append("g");
+
+    const linkSel = gLinks.selectAll("line").data(links).enter().append("line");
+
+    const nodeSel = gNodes.selectAll("ellipse").data(nodes).enter().append("ellipse")
+      .attr("class","petal")
+      .attr("fill", d => d.kind==="core" ? d.color : "transparent")
+      .attr("stroke", d => d.kind==="core" ? "none" : d.color)
+      .attr("stroke-width", d => d.kind==="core" ? 0 : 2)
+      .attr("opacity", 0.95)
+      .on("click", function(e,d){
+        if(d.kind!=="tag") return;
+        d.active = !d.active;
+        d.rx0 = d.active ? childRx+8 : childRx;
+        d.ry0 = d.active ? childRy+6 : childRy;
+        d.targetRx = d.rx0;
+        d.targetRy = d.ry0;
+        d3.select(this)
+          .attr("fill", d.active ? d.color : "transparent")
+          .attr("stroke-width", d.active ? 0 : 2);
+        updateCoreSizes();
+        refreshCollide();
+      });
+
+    const labelSel = gLabels.selectAll("text").data(nodes).enter().append("text")
+      .attr("class","label")
+      .style("font-size", d => d.kind==="core" ? "14px" : "12px")
+      .text(d => d.name);
+
+    function updateCoreSizes(){
+      const counts = { sanguine:0, choleric:0, melancholic:0, phlegmatic:0 };
+      nodes.forEach(n => { if(n.kind==="tag" && n.active) counts[n.key]++; });
+      nodes.forEach(n=>{
+        if(n.kind==="core"){
+          const c = counts[n.key];
+          n.targetRx = n.baseRx + c*12;
+          n.targetRy = n.baseRy + c*8;
+        }
+      });
+    }
+
+    function driftTarget(n){
+      if(n.kind!=="tag") return {x:n.x,y:n.y};
+      n.phase += n.speed;
+      const theta = n.thetaBase + Math.sin(n.phase)*0.28;
+      const r = orbitR + Math.cos(n.phase*0.8)*12;
+      const a = anchors[n.key];
+      return { x: a.x + Math.cos(theta)*r, y: a.y + Math.sin(theta)*r };
+    }
+
+    function applyBreath(n){
+      if(n.kind!=="tag") return;
+      n.breathPhase += 0.01;
+      const scale = 1 + 0.08*Math.sin(n.breathPhase);
+      n.targetRx = n.rx0 * scale;
+      n.targetRy = n.ry0 * scale;
+    }
+
+    function applySqueeze(){
+      for(let i=0;i<nodes.length;i++){
+        for(let j=i+1;j<nodes.length;j++){
+          const a=nodes[i], b=nodes[j];
+          const dx=b.x-a.x, dy=b.y-a.y;
+          const dist=Math.hypot(dx,dy);
+          const minDist=(Math.max(a.rx,a.ry)+Math.max(b.rx,b.ry))*0.95;
+          if(dist<minDist){
+            const overlap=(minDist-dist)/minDist;
+            if(a.kind!=="core"){
+              a.targetRx = a.rx0*(1-overlap*0.15);
+              a.targetRy = a.ry0*(1-overlap*0.15);
+            }
+            if(b.kind!=="core"){
+              b.targetRx = b.rx0*(1-overlap*0.15);
+              b.targetRy = b.ry0*(1-overlap*0.15);
+            }
+          }
+        }
+      }
+    }
+
+    function lerp(a,b,t){ return a+(b-a)*t; }
+    function updateSizes(){
+      nodes.forEach(n=>{
+        n.rx = lerp(n.rx, n.targetRx, 0.1);
+        n.ry = lerp(n.ry, n.targetRy, 0.1);
+      });
+    }
+
+    const forceToAnchor = () => {
+      nodes.forEach(n=>{
+        if(n.kind==="core"){
+          const a = anchors[n.key];
+          n.vx += (a.x - n.x)*0.15;
+          n.vy += (a.y - n.y)*0.15;
+        } else {
+          const t = driftTarget(n);
+          n.vx += (t.x - n.x)*0.02;
+          n.vy += (t.y - n.y)*0.02;
+        }
+      });
+    };
+    let collide = d3.forceCollide().radius(d => Math.max(d.rx,d.ry)*0.95).iterations(1);
+    const charge = d3.forceManyBody().strength(d => d.kind==="core"? -60 : -15);
+
+    const sim = d3.forceSimulation(nodes)
+      .alpha(0.9)
+      .alphaDecay(0.02)
+      .velocityDecay(0.25)
+      .force("charge", charge)
+      .force("collide", collide)
+      .on("tick", ticked);
+
+    function refreshCollide(){
+      collide.radius(d => Math.max(d.rx,d.ry)*0.95);
+      sim.alpha(0.6).restart();
+    }
+
+    let globalPhase = 0;
+    function applyWindyMotion(){
+      globalPhase += 0.003;
+      const swayX = Math.sin(globalPhase) * 20;
+      const swayY = Math.cos(globalPhase*0.7) * 10;
+      gFlower.attr("transform", `translate(${swayX},${swayY})`);
+    }
+
+    function ticked(){
+      forceToAnchor();
+      nodes.forEach(n=>applyBreath(n));
+      applySqueeze();
+      updateSizes();
+      nodeSel.attr("cx", d=>d.x).attr("cy", d=>d.y).attr("rx", d=>d.rx).attr("ry", d=>d.ry);
+      labelSel.attr("x", d=>d.x).attr("y", d=>d.y+4);
+      linkSel
+        .attr("x1", d=>getNode(d.source).x).attr("y1", d=>getNode(d.source).y)
+        .attr("x2", d=>getNode(d.target).x).attr("y2", d=>getNode(d.target).y);
+      applyWindyMotion();
+    }
+
+    function getNode(idOrObj){ return (typeof idOrObj==="string") ? nodes.find(n=>n.id===idOrObj) : idOrObj; }
+
+    updateCoreSizes();
+  })();
+  </script>
+</body>
+</html>
