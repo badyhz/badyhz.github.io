@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>人格环形系统（外扩肥边版）</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    body {
+      margin: 0;
+      background: #fff;
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+    #stage {
+      width: 100vw;
+      height: 100vh;
+      overflow: visible;
+    }
+    .label {
+      fill: #333;
+      font-size: 14px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<svg id="stage"></svg>
+
+<script>
+// ====== 1. 画布设置 ======
+const WIDTH = 1800;
+const HEIGHT = 1200;
+const cx = WIDTH / 2;
+const cy = HEIGHT / 2;
+
+const svg = d3.select("#stage")
+  .attr("viewBox", [0, 0, WIDTH, HEIGHT])
+  .attr("preserveAspectRatio", "xMidYMid meet");
+
+// ====== 2. 内层数据（t2～t6）======
+const layers = [
+  { key: "t3", data: ["水晶质","铁石质","木质","火焰质","流水质","泥土质","风砂质","金属质"], r: 150, color: "#ba68c8" },
+  { key: "t2", data: ["坚韧","敏感","理性","情感化","创造力","秩序感","责任心","探索欲"], r: 250, color: "#4db6ac" },
+  { key: "t1", data: ["城市适应","自然适应","变化应对","压力恢复","社交场景","孤立环境","节奏变化","长期规划"], r: 340, color: "#64b5f6" },
+  { key: "t4", data: ["拖延","易怒","过度敏感","抗拒变化","孤僻","依赖","过度完美","冒险过度"], r: 420, color: "#ef5350" },
+  { key: "t5", data: ["时间管理","冥想","写作表达","运动习惯","社交练习","独立训练","目标拆解","风险规避"], r: 500, color: "#ffb74d" },
+  { key: "t6", data: ["合作型","竞争型","依赖型","独立型","利他型","自我型","沟通型","回避型"], r: 580, color: "#81c784" }
+];
+
+// ====== 3. 外圈融合参数 ======
+const fusionLabels = ["结构均衡","情绪均衡","环境均衡","风险对冲","优化执行","关系稳定","能量流动","自我修复"];
+const fusionRadius = 660;        // 黄色内半径
+const fusionThickness = 100;     // 黄色块宽度：660 → 760
+const glowMax = 50;              // 绿色“肥边”最大外扩厚度
+const potential = [0.9, 0.8, 0.75, 0.85, 0.7, 0.65, 0.8, 0.9]; // t7
+
+// ====== 4. 状态初始化 ======
+const state = {};
+layers.forEach(layer => {
+  state[layer.key] = Array(8).fill(0);
+});
+state.t8 = Array(8).fill(0); // 融合值
+
+// 存储文字节点（用于提升层级）
+const labels = [];
+
+// ====== 5. 绘制内层环 ======
+function drawRing(layer) {
+  const group = svg.append("g")
+    .attr("transform", `translate(${cx},${cy})`);
+
+  layer.data.forEach((label, i) => {
+    const start = (i / 8) * 2 * Math.PI;
+    const end = ((i + 1) / 8) * 2 * Math.PI;
+    const mid = (start + end) / 2;
+
+    // 扇形路径
+    const arc = d3.arc()
+      .innerRadius(layer.r - 25)
+      .outerRadius(layer.r + 25)
+      .startAngle(start)
+      .endAngle(end);
+
+    const path = group.append("path")
+      .attr("d", arc)
+      .attr("fill", "#eee")
+      .attr("stroke", layer.color)
+      .style("cursor", "pointer")
+      .on("click", () => {
+        state[layer.key][i] = 1 - state[layer.key][i];
+        path.attr("fill", state[layer.key][i] ? layer.color : "#eee");
+        updateFusion();
+      });
+
+    // 文字位置
+    const x = Math.cos(mid) * layer.r;
+    const y = Math.sin(mid) * layer.r;
+
+    // 自适应字体大小
+    const fontSize = Math.min(14, 100 / label.length * 2.5);
+
+    // 锚点
+    let anchor;
+    if (Math.abs(Math.cos(mid)) < 0.1) anchor = "middle";
+    else if (Math.cos(mid) > 0) anchor = "start";
+    else anchor = "end";
+
+    const text = group.append("text")
+      .attr("class", "label")
+      .attr("x", x)
+      .attr("y", y)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", anchor)
+      .style("font-size", fontSize + "px")
+      .text(label)
+      .node();
+
+    labels.push(text);
+  });
+}
+
+// ====== 6. 绘制外圈融合环（黄+外扩绿边）======
+function drawFusionRing() {
+  const group = svg.append("g")
+    .attr("transform", `translate(${cx},${cy})`);
+
+  // ====== SVG 滤镜：绿色发光效果 ======
+  const defs = svg.append("defs");
+
+  const filter = defs.append("filter")
+    .attr("id", "glow")
+    .attr("x", "-30%")
+    .attr("y", "-30%")
+    .attr("width", "160%")
+    .attr("height", "160%");
+
+  filter.append("feGaussianBlur")
+    .attr("in", "SourceGraphic")
+    .attr("stdDeviation", "2.5")
+    .attr("result", "blur");
+
+  filter.append("feMerge").selectAll("feMergeNode")
+    .data([{ in: "blur" }, { in: "SourceGraphic" }])
+    .enter().append("feMergeNode")
+    .attr("in", d => d.in);
+
+  // ====== 绘制8个融合单元 ======
+  for (let i = 0; i < 8; i++) {
+    const start = (i / 8) * 2 * Math.PI;
+    const end = ((i + 1) / 8) * 2 * Math.PI;
+    const mid = (start + end) / 2;
+
+    // --- 黄色主体块 ---
+    const yellowArc = d3.arc()
+      .innerRadius(fusionRadius)
+      .outerRadius(fusionRadius + fusionThickness)
+      .startAngle(start)
+      .endAngle(end);
+
+    group.append("path")
+      .attr("class", "fusion-yellow")
+      .attr("d", yellowArc)
+      .attr("fill", "#fdd835")
+      .attr("stroke", "#ffeb3b")
+      .attr("stroke-width", 1);
+
+    // --- 绿色外扩“肥边” ---
+    const greenArc = d3.arc()
+      .innerRadius(fusionRadius + fusionThickness)
+      .outerRadius(fusionRadius + fusionThickness) // 初始为线
+      .startAngle(start)
+      .endAngle(end);
+
+    const greenPath = group.append("path")
+      .attr("class", "fusion-green")
+      .attr("data-index", i)
+      .attr("fill", "#4db6ac")
+      .attr("opacity", 0.75)
+      .style("filter", "url(#glow)");
+
+    // --- 引线与文字 ---
+    const innerX = Math.cos(mid) * (fusionRadius + fusionThickness);
+    const innerY = Math.sin(mid) * (fusionRadius + fusionThickness);
+    const textX = Math.cos(mid) * (fusionRadius + fusionThickness + 60 + glowMax);
+    const textY = Math.sin(mid) * (fusionRadius + fusionThickness + 60 + glowMax);
+
+    let anchor;
+    if (Math.abs(Math.cos(mid)) < 0.1) anchor = "middle";
+    else if (Math.cos(mid) > 0) anchor = "start";
+    else anchor = "end";
+
+    // 引线
+    group.append("line")
+      .attr("x1", innerX)
+      .attr("y1", innerY)
+      .attr("x2", textX)
+      .attr("y2", textY)
+      .attr("stroke", "#aaa")
+      .attr("stroke-width", 1)
+      .style("stroke-dasharray", "4,4");
+
+    // 文字
+    const text = group.append("text")
+      .attr("class", "label")
+      .attr("x", textX)
+      .attr("y", textY)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", anchor)
+      .style("font-size", "14px")
+      .style("font-weight", "bold")
+      .text(fusionLabels[i])
+      .node();
+
+    labels.push(text);
+  }
+}
+
+// ====== 7. 更新融合环（绿色外扩）======
+function updateFusion() {
+  // 计算 t8：t2~t6 的平均值
+  for (let i = 0; i < 8; i++) {
+    state.t8[i] = (state.t2[i] + state.t1[i] + state.t4[i] + state.t5[i] + state.t6[i]) / 5;
+  }
+
+  svg.selectAll(".fusion-green").each(function(d, i) {
+    const start = (i / 8) * 2 * Math.PI;
+    const end = ((i + 1) / 8) * 2 * Math.PI;
+
+    // 激活比例
+    const ratio = Math.min(state.t8[i] / potential[i], 1);
+    const outer = fusionRadius + fusionThickness + glowMax * ratio;
+
+    const arc = d3.arc()
+      .innerRadius(fusionRadius + fusionThickness)
+      .outerRadius(outer)
+      .startAngle(start)
+      .endAngle(end);
+
+    d3.select(this).attr("d", arc);
+  });
+
+  // 提升所有文字到顶层
+  raiseLabels();
+}
+
+// ====== 8. 提升文字层级 ======
+function raiseLabels() {
+  labels.forEach(text => {
+    if (text?.parentNode) {
+      text.parentNode.appendChild(text);
+    }
+  });
+}
+
+// ====== 9. 初始化 ======
+layers.forEach(drawRing);
+drawFusionRing();
+updateFusion();
+
+// 多次确保文字在最上层
+[100, 300, 600].forEach(t => setTimeout(raiseLabels, t));
+</script>
+</body>
+</html>
