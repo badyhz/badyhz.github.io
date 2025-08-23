@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>人格花瓣图（四液质 + 八层级）</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { background:#fff; margin:0; }
+    svg { width:100%; height:100vh; display:block; }
+    .label { font-size:11px; text-anchor:middle; pointer-events:none; fill:#333; dominant-baseline:middle; }
+    .core-label { font-size:14px; font-weight:bold; }
+    .percent-label { font-size:13px; fill:#fff; font-weight:bold; pointer-events:none; text-anchor:middle; dominant-baseline:middle; }
+    .petal { cursor:pointer; transition: fill 0.25s, stroke-width 0.25s; }
+  </style>
+</head>
+<body>
+  <svg id="stage" viewBox="0 0 1800 1200">
+    <g id="flower"></g>
+  </svg>
+
+  <script>
+  const W=1800,H=1200,cx=W/2,cy=H/2;
+  const coreRingR=280, outerRingR=460;
+
+  const svg=d3.select("#stage");
+  const gFlower=svg.select("#flower");
+  const gNodes=gFlower.append("g"), gLabels=gFlower.append("g");
+
+  // ==== 数据 ====
+  const temperamentModules = {
+    "多血质":[ "活力指数（78%）","社交倾向（82%）","情绪表达（74%）","乐观性（69%）","语言表现力（71%）","适应力（67%）","冲动行为（58%）","冒险精神（76%）","幽默感（64%）","注意力分散度（55%）" ],
+    "胆汁质":[ "领导力（81%）","行动力（74%）","情绪爆发度（65%）","目标导向性（83%）","竞争心（72%）","独立性（79%）","攻击性（61%）","掌控欲（77%）","抗压性（68%）","急躁度（66%）" ],
+    "抑郁质":[ "敏感度（73%）","共情力（69%）","艺术倾向（75%）","自省性（82%）","计划性（71%）","责任心（77%）","完美主义（74%）","谨慎度（68%）","自我批评（64%）","理想主义（70%）" ],
+    "粘液质":[ "稳定性（85%）","耐心（81%）","持久力（76%）","和谐性（79%）","顺应性（72%）","冷静度（83%）","人际回避（59%）","节奏感（74%）","一致性（71%）","保守性（65%）" ]
+  };
+
+  const layerModules = {
+    "人格类型标签":[ "情绪主导","决策速度","风险态度","能量来源","表达方式","适应习惯","行动倾向","一致性" ],
+    "人格结构":[ "镜面（自我觉察）","筋骨（自我控制）","水流（灵活性）","火焰（动机）","指南针（价值观）","盾牌（情绪稳定）","桥梁（人际连接）","岩石（意志力）" ],
+    "核心特质":[ "开放性","尽责性","外向性","宜人性","神经质","自律性","独立性","创新性" ],
+    "环境适应力":[ "抗压速度","变化接受度","学习速度","问题解决力","资源利用度","社交适应度","情境灵活性","自我修复力" ],
+    "潜在风险":[ "情绪爆发倾向","拖延倾向","冲突升级风险","注意力分散","过度敏感","过度依赖","行为僵化","动机下降" ],
+    "优化策略":[ "情绪调节方法","时间管理能力","沟通改善技巧","目标设定能力","压力释放方式","自我激励技巧","学习迁移能力","行为习惯养成" ],
+    "发展潜力":[ "创造力潜能","领导力潜能","学习成长速度","抗压成长空间","人际影响力","自我突破意愿","综合发展潜能","长期坚持力" ],
+    "关系模式":[ "信任建立速度","合作倾向","依赖程度","独立程度","冲突处理方式","表达清晰度","共情能力","关系稳定性" ]
+  };
+
+  const allModules = {...temperamentModules, ...layerModules};
+  const moduleOrder = Object.keys(allModules);
+
+  // 颜色（4 + 8）
+  const colors=["#ff7f50","#1e90ff","#9370db","#3cb371",
+                "#dc143c","#20b2aa","#daa520","#4169e1",
+                "#8b4513","#ff69b4","#708090","#228b22"];
+
+  const angleStep=(2*Math.PI)/moduleOrder.length;
+
+  function parsePercent(txt){
+    const m = txt.match(/(\d+(\.\d+)?)%/);
+    return m ? parseFloat(m[1]) : null;
+  }
+  function scaleFactor(p){ return 0.4 + (p/100)*1.2; }
+
+  function irregularShapePath(cx, cy, baseR, factor=1, points=28) {
+    const angleStep = (2*Math.PI)/points;
+    const rBase = baseR * factor;
+    let path = "";
+    for(let i=0;i<=points;i++){
+      const angle = i*angleStep;
+      const r = rBase * (0.9 + Math.random()*0.25);
+      const x = cx + Math.cos(angle)*r;
+      const y = cy + Math.sin(angle)*r;
+      path += (i===0 ? `M${x},${y}` : `L${x},${y}`);
+    }
+    return path+"Z";
+  }
+
+  // === 主标签数据 ===
+  const cores = moduleOrder.map((m,i)=>({
+    id:`core-${i}`,name:m,color:colors[i%colors.length],
+    x:cx+Math.cos(i*angleStep)*coreRingR,
+    y:cy+Math.sin(i*angleStep)*coreRingR,
+    baseR:100, expanded:false, activeCount:0
+  }));
+
+  // === 绘制主标签 ===
+  const coreSel=gNodes.selectAll("path.core").data(cores).enter()
+    .append("path")
+    .attr("class","petal core")
+    .attr("d",d=>irregularShapePath(d.x,d.y,d.baseR))
+    .attr("fill",d=>d.color)
+    .attr("stroke",d=>d.color)
+    .attr("stroke-width",2)
+    .call(d3.drag().on("drag", function(e,d){
+      d.x=e.x; d.y=e.y;
+      redrawCore(d);
+      redrawSubtags(d);
+    }))
+    .on("click",function(e,d){
+      d.expanded=!d.expanded;
+      toggleSubtags(d);
+    });
+
+  const coreLabels=gLabels.selectAll("text.core").data(cores).enter()
+    .append("text")
+    .attr("class","label core-label")
+    .text(d=>d.name)
+    .attr("x",d=>d.x)
+    .attr("y",d=>d.y);
+
+  // 百分比文字（仅对四液质有效）
+  const percentLabels=gLabels.selectAll("text.percent").data(cores).enter()
+    .append("text")
+    .attr("class","percent-label")
+    .text("")
+    .attr("x",d=>d.x)
+    .attr("y",d=>d.y);
+
+  // === 展开/收起子标签 ===
+  function toggleSubtags(core){
+    gNodes.selectAll(`.tag-${core.id}`).remove();
+    gLabels.selectAll(`.label-tag-${core.id}`).remove();
+
+    if(!core.expanded) return;
+
+    const subs=allModules[core.name];
+    subs.forEach((txt,i)=>{
+      const angle=(i/subs.length)*2*Math.PI;
+      const posX=core.x+Math.cos(angle)*outerRingR*0.6;
+      const posY=core.y+Math.sin(angle)*outerRingR*0.6;
+      const percent=parsePercent(txt);
+
+      gNodes.append("path")
+        .datum({active:false,parent:core,x:posX,y:posY,txt:txt,percent:percent})
+        .attr("class",`petal tag-${core.id}`)
+        .attr("d",irregularShapePath(posX,posY,40,percent?scaleFactor(percent):1))
+        .attr("fill","transparent")
+        .attr("stroke",core.color)
+        .attr("stroke-width",2)
+        .on("click",function(e,d){
+          d.active=!d.active;
+          d3.select(this).attr("fill", d.active?core.color:"transparent");
+          if(d.percent){ updateCoreScale(d.parent); }
+        });
+
+      gLabels.append("text")
+        .attr("class",`label label-tag-${core.id}`)
+        .text(txt)
+        .attr("x",posX)
+        .attr("y",posY);
+    });
+  }
+
+  // === 更新大标签缩放（仅四液质） ===
+  function updateCoreScale(core){
+    const activeCount=gNodes.selectAll(`.tag-${core.id}`).data().filter(d=>d.active).length;
+    core.activeCount=activeCount;
+    const scale=1.0 + activeCount*0.1;
+    gNodes.selectAll(`path.core`).filter(d=>d.id===core.id)
+      .transition().duration(400)
+      .attr("d",d=>irregularShapePath(d.x,d.y,d.baseR*scale));
+
+    gLabels.selectAll("text.percent-label").filter(d=>d.id===core.id)
+      .text(`${activeCount*10}%`)
+      .attr("x",core.x).attr("y",core.y);
+  }
+
+  function redrawCore(core){
+    gNodes.selectAll("path.core").filter(d=>d.id===core.id)
+      .attr("d",d=>irregularShapePath(core.x,core.y,core.baseR*(1.0+core.activeCount*0.1)));
+    gLabels.selectAll("text.core-label").filter(d=>d.id===core.id)
+      .attr("x",core.x).attr("y",core.y);
+    gLabels.selectAll("text.percent-label").filter(d=>d.id===core.id)
+      .attr("x",core.x).attr("y",core.y);
+  }
+
+  function redrawSubtags(core){
+    if(!core.expanded) return;
+    const subs=allModules[core.name];
+    gNodes.selectAll(`.tag-${core.id}`).data().forEach((d,i)=>{
+      const angle=(i/subs.length)*2*Math.PI;
+      d.x=core.x+Math.cos(angle)*outerRingR*0.6;
+      d.y=core.y+Math.sin(angle)*outerRingR*0.6;
+    });
+    gNodes.selectAll(`.tag-${core.id}`)
+      .attr("d",d=>irregularShapePath(d.x,d.y,40,d.percent?scaleFactor(d.percent):1));
+    gLabels.selectAll(`.label-tag-${core.id}`)
+      .attr("x",(d,i)=>core.x+Math.cos(i/subs.length*2*Math.PI)*outerRingR*0.6)
+      .attr("y",(d,i)=>core.y+Math.sin(i/subs.length*2*Math.PI)*outerRingR*0.6);
+  }
+  </script>
+</body>
+</html>
