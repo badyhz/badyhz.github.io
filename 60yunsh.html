@@ -2,208 +2,342 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>八字排盘 + 命格解析 + 运势</title>
+  <title>八字排盘 + 喜用神 & 60年运势评分</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
   <style>
-    body { font-family: "Noto Sans SC", sans-serif; padding: 20px; }
-    h1 { color: #444; }
-    .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-    button { padding: 8px 14px; margin: 5px; border-radius: 6px; border: none; cursor: pointer; background: #3a86ff; color: white; }
-    button:hover { opacity: 0.9; }
-    .ok { color: green; font-weight: bold; }
-    .fail { color: red; font-weight: bold; }
-    ul { line-height: 1.6; }
-    .score { font-size: 18px; font-weight: bold; color: #d62828; }
+    body{font-family:"Noto Sans SC",system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f6f7fb;margin:0;padding:24px;color:#1f2937}
+    h1{margin:0 0 12px 0;font-size:24px;text-align:center}
+    .status{font-weight:600;margin:8px 0 16px 0;text-align:center}
+    .green{color:#16a34a}.red{color:#ef4444}.orange{color:#f59e0b}
+    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 24px rgba(17,24,39,.06);margin-top:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .row input[type="number"]{width:90px}
+    .btn{padding:10px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#22c55e;color:#fff}.btn-secondary{background:#3b82f6;color:#fff}.btn-test{background:#f59e0b;color:#fff}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:8px}
+    .kpi{background:#0b1020;color:#fff;border-radius:12px;padding:12px}
+    .kpi h3{margin:0 0 6px 0;font-size:13px;opacity:.8;font-weight:500}
+    .kpi div{font-size:18px;font-weight:700}
+    .code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b1020;color:#cbd5e1;padding:10px;border-radius:8px;white-space:pre-wrap}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px 8px;text-align:left}
+    th{background:#f9fafb;position:sticky;top:0;z-index:1}
+    .scroll{max-height:60vh;overflow:auto;border-radius:12px}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;margin-right:6px;margin-bottom:4px;border:1px solid rgba(31,41,55,.12)}
+    .tag-red{color:#ef4444;border-color:#fecaca;background:#fff1f2}
+    .tag-green{color:#16a34a;border-color:#bbf7d0;background:#f0fdf4}
+    .tag-amber{color:#b45309;border-color:#fde68a;background:#fffbeb}
+    .muted{color:#6b7280;font-size:13px}
+    .goodCell{font-weight:700}
   </style>
 </head>
 <body>
-  <h1>八字排盘 & 命格解析 & 出生后60年运势</h1>
+  <h1>八字排盘 + 喜用神 & 出生后60年运势评分</h1>
+  <div id="engineStatus" class="status">排盘引擎：lunar-javascript（加载中…）</div>
 
-  <div id="engineStatus" class="section">排盘引擎：加载中…</div>
-  <button onclick="runTest()">运行内建测试</button>
-
-  <div class="section">
-    <h2>输入出生信息</h2>
-    <label>出生年份: <input type="number" id="year" value="1990"></label>
-    <label>月份: <input type="number" id="month" value="1"></label>
-    <label>日期: <input type="number" id="day" value="1"></label>
-    <label>时辰(0-23): <input type="number" id="hour" value="12"></label>
-    <button onclick="generateBazi()">生成八字</button>
+  <div class="card">
+    <div class="row">
+      <label>出生日期时间：</label>
+      <input type="number" id="year" placeholder="年">
+      <input type="number" id="month" placeholder="月">
+      <input type="number" id="day" placeholder="日">
+      <input type="number" id="hour" placeholder="时">
+      <button class="btn btn-primary" id="btnBazi">生成八字</button>
+      <button class="btn btn-secondary" id="btnLuck">生成出生后60年运势</button>
+      <button class="btn btn-test" id="btnTest">运行内建测试</button>
+    </div>
+    <div class="muted" style="margin-top:6px">提示：小时未知可先填 12；如遇网络波动导致脚本未加载，请刷新。</div>
   </div>
 
-  <div class="section">
-    <h2>八字排盘结果</h2>
-    <div id="baziResult"></div>
+  <div class="card" id="panelBazi" style="display:none">
+    <h2>📜 八字排盘 & 命格</h2>
+    <div class="grid" id="kpi"></div>
+    <pre class="code" id="baziText"></pre>
+    <div id="yongshenBox" class="muted"></div>
   </div>
 
-  <div class="section">
-    <h2>命格 & 喜用神解析</h2>
-    <div id="minggeResult"></div>
+  <div class="card" id="panelLuck" style="display:none">
+    <h2>📈 出生后 60 年运势评分（按喜用神加权）</h2>
+    <div class="muted" style="margin-bottom:8px">
+      标记：<span class="tag">本命年</span>/<span class="tag">冲太岁</span>/<span class="tag">合太岁</span>，
+      <span class="tag tag-red">重大转折</span>（子午卯酉），
+      <span class="tag tag-green">贵人</span>（年干合日干），
+      <span class="tag tag-amber">小人</span>（年干冲日干）。评分=基础分+喜用加成−忌神扣分（干>支）。
+    </div>
+
+    <div class="card" id="summaryCard" style="background:#f9fafb">
+      <h3 style="margin:4px 0 8px 0;">年度摘要</h3>
+      <div id="summaryText" class="muted">生成后显示最旺 TOP5 / 需谨慎 TOP5。</div>
+    </div>
+
+    <div class="scroll" style="margin-top:8px">
+      <table id="luckTable">
+        <thead>
+          <tr>
+            <th>序</th><th>年份</th><th>年干支</th><th>生肖</th>
+            <th>标签</th><th>评分</th><th>说明</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="section">
-    <h2>评分系统</h2>
-    <div id="scoreResult" class="score"></div>
-  </div>
+<script>
+  // 引擎状态
+  window.addEventListener('load', () => {
+    const st = document.getElementById('engineStatus');
+    if (window.Solar && window.Lunar) { st.textContent = '排盘引擎：lunar-javascript（已就绪）'; st.classList.add('green'); }
+    else { st.textContent = '排盘引擎：lunar-javascript（加载失败）'; st.classList.add('red'); }
+  });
 
-  <div class="section">
-    <h2>运势分析（出生后60年）</h2>
-    <button onclick="generateLuck()">生成运势</button>
-    <ul id="luckResult"></ul>
-  </div>
+  // 映射表
+  const wuxingGan = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};
+  const wuxingZhi = {子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
+  const fourZheng = new Set(['子','午','卯','酉']);
+  const clashSX = {鼠:'马',牛:'羊',虎:'猴',兔:'鸡',龙:'狗',蛇:'猪',马:'鼠',羊:'牛',猴:'虎',鸡:'兔',狗:'龙',猪:'蛇'};
+  const heSX = {鼠:'牛',牛:'鼠',虎:'猪',猪:'虎',兔:'狗',狗:'兔',龙:'鸡',鸡:'龙',蛇:'猴',猴:'蛇',马:'羊',羊:'马'};
+  const ganHe = {甲:'己',乙:'庚',丙:'辛',丁:'壬',戊:'癸',己:'甲',庚:'乙',辛:'丙',壬:'丁',癸:'戊'};
+  const ganChong = {甲:'庚',乙:'辛',丙:'壬',丁:'癸',戊:'甲',己:'乙',庚:'甲',辛:'乙',壬:'丙',癸:'丁'};
 
-  <script>
-    // 五行对应表
-    const wuxingMap = {
-      "甲":"木","乙":"木",
-      "丙":"火","丁":"火",
-      "戊":"土","己":"土",
-      "庚":"金","辛":"金",
-      "壬":"水","癸":"水"
-    };
+  // 工具
+  function needInputs() {
+    const y = parseInt(document.getElementById('year').value,10);
+    const m = parseInt(document.getElementById('month').value,10);
+    const d = parseInt(document.getElementById('day').value,10);
+    const h = parseInt(document.getElementById('hour').value,10);
+    if (!y || !m || !d || isNaN(h)) { alert('请输入完整的 年/月/日/时'); return null; }
+    if (!window.Solar || !window.Lunar) { alert('引擎未加载成功'); return null; }
+    return {y,m,d,h};
+  }
 
-    // 检测引擎
-    function checkEngine() {
-      const statusDiv = document.getElementById('engineStatus');
-      if (window.Solar && window.Lunar) {
-        statusDiv.textContent = '排盘引擎：lunar-javascript（已就绪）';
-        statusDiv.className = 'ok';
-      } else {
-        statusDiv.textContent = '排盘引擎：lunar-javascript（加载失败）';
-        statusDiv.className = 'fail';
-      }
+  // 命格&喜用神推导（简化版，可替换为更细致流派规则）
+  function inferMingJuAndYong(baziEC) {
+    const stems = [baziEC.getYearGan(), baziEC.getMonthGan(), baziEC.getDayGan(), baziEC.getTimeGan()];
+    const wuxCount = {木:0,火:0,土:0,金:0,水:0};
+    stems.forEach(g => { const w = wuxingGan[g]; if (w) wuxCount[w]++; });
+
+    const dayGan = baziEC.getDayGan();
+    const dayMaster = wuxingGan[dayGan];
+
+    // 强弱（非常简化：以天干数+月令权重粗判）
+    let strongWeak = '中和';
+    if (wuxCount[dayMaster] >= 3) strongWeak = '偏强';
+    if (wuxCount[dayMaster] <= 1) strongWeak = '偏弱';
+
+    // 喜用/忌神集合
+    let yongSet = new Set(), jiSet = new Set();
+    if (strongWeak === '偏强') {
+      // 喜泄耗/克制：日主所克、克日主
+      // 五行相克：木克土、土克水、水克火、火克金、金克木
+      const ke = {木:'土',火:'金',土:'水',金:'木',水:'火'};
+      const beiKe = Object.fromEntries(Object.entries(ke).map(([a,b])=>[b,a]));
+      yongSet.add(ke[dayMaster]); yongSet.add(beiKe[dayMaster]);
+      // 忌同党：比劫
+      jiSet.add(dayMaster);
+    } else if (strongWeak === '偏弱') {
+      // 喜同党/生助：同元素+生我
+      // 生：木生火、火生土、土生金、金生水、水生木
+      const sheng = {木:'火',火:'土',土:'金',金:'水',水:'木'};
+      const shengWo = Object.fromEntries(Object.entries(sheng).map(([a,b])=>[b,a]));
+      yongSet.add(dayMaster); yongSet.add(shengWo[dayMaster]);
+      // 忌克我/泄我
+      const ke = {木:'土',火:'金',土:'水',金:'木',水:'火'};
+      const woSheng = sheng[dayMaster];
+      jiSet.add(ke[dayMaster]); jiSet.add(woSheng);
+    } else {
+      // 中和：总体平衡，轻微偏好 月令、岁运补齐缺项（这里给出建议：缺啥补啥）
+      // 我们把“缺口最大的两项”暂定为喜用
+      const order = Object.entries(wuxCount).sort((a,b)=>a[1]-b[1]);
+      yongSet.add(order[0][0]); yongSet.add(order[1][0]);
+      // 值最大的一项暂作忌
+      jiSet.add(order[4][0]);
     }
-    checkEngine();
+    return { dayGan, dayMaster, strongWeak, wuxCount, yongSet, jiSet };
+  }
 
-    // 内建测试
-    function runTest() {
-      if (window.Solar && window.Lunar) {
-        const solar = Solar.fromYmdHms(1990, 1, 1, 12, 0, 0);
-        const lunar = solar.getLunar();
-        alert("测试成功：1990-01-01 八字 -> " +
-          lunar.getYearInGanZhi() + "年 " +
-          lunar.getMonthInGanZhi() + "月 " +
-          lunar.getDayInGanZhi() + "日 " +
-          lunar.getTimeInGanZhi() + "时");
-      } else {
-        alert("引擎加载失败，无法运行测试。");
-      }
+  // 八字生成
+  function generateBazi() {
+    const inps = needInputs(); if (!inps) return;
+    const {y,m,d,h} = inps;
+    const solar = Solar.fromYmdHms(y,m,d,h,0,0);
+    const lunar = solar.getLunar();
+    const ec = lunar.getEightChar();
+
+    const lines = [];
+    lines.push(`公历：${y}-${m}-${d} ${String(h).padStart(2,'0')}:00`);
+    lines.push(`农历：${lunar.toFullString()}`);
+    lines.push(`八字：${ec.toString()}`);
+    lines.push(`四柱：年 ${ec.getYear()}｜月 ${ec.getMonth()}｜日 ${ec.getDay()}｜时 ${ec.getTime()}`);
+    lines.push(`日主（日干）：${ec.getDayGan()}`);
+
+    document.getElementById('panelBazi').style.display='block';
+    document.getElementById('baziText').textContent = lines.join('\n');
+
+    // KPI
+    const kpi = document.getElementById('kpi');
+    kpi.innerHTML='';
+    const kpis = [
+      ['生肖', lunar.getYearShengXiao()],
+      ['日干', ec.getDayGan()],
+      ['年干支', ec.getYear()],
+      ['月令（月支）', ec.getMonthZhi()],
+    ];
+    kpis.forEach(([k,v])=>{
+      const el=document.createElement('div'); el.className='kpi';
+      el.innerHTML=`<h3>${k}</h3><div>${v}</div>`;
+      kpi.appendChild(el);
+    });
+
+    // 喜用神
+    const info = inferMingJuAndYong(ec);
+    const wc = info.wuxCount;
+    document.getElementById('yongshenBox').innerHTML =
+      `五行分布：木${wc['木']} 火${wc['火']} 土${wc['土']} 金${wc['金']} 水${wc['水']}<br>
+       命局强弱：<b>${info.strongWeak}</b>；日主：<b>${info.dayMaster}</b><br>
+       推荐喜用神：<b>${[...info.yongSet].join('、')}</b>；忌神：<b>${[...info.jiSet].join('、')}</b>`;
+  }
+
+  // 60年运势（按喜用神加权评分）
+  function generateLuck60() {
+    const inps = needInputs(); if (!inps) return;
+    const {y,m,d,h} = inps;
+
+    // 基准
+    const baseSolar = Solar.fromYmdHms(y,m,d,h,0,0);
+    const baseLunar = baseSolar.getLunar();
+    const baseEC = baseLunar.getEightChar();
+    const { dayGan, yongSet, jiSet } = inferMingJuAndYong(baseEC);
+    const myAnimal = baseLunar.getYearShengXiao();
+
+    const tbody=document.querySelector('#luckTable tbody');
+    tbody.innerHTML='';
+
+    const rows = [];
+
+    for (let i=0; i<60; i++){
+      const Y = y + i;
+      const s = Solar.fromYmdHms(Y,m,d,h,0,0);
+      const l = s.getLunar();
+      const gz = l.getYearInGanZhi();
+      const gan = l.getYearGan(); // 更稳妥地取年干
+      const zhi = l.getYearZhi(); // 年支
+      const animal = l.getYearShengXiao();
+
+      // 标签：太岁、本命/冲/合
+      const tags = [];
+      if (animal === myAnimal) tags.push('<span class="tag">本命年</span>');
+      if (clashSX[myAnimal] === animal) tags.push('<span class="tag">冲太岁</span>');
+      if (heSX[myAnimal] === animal) tags.push('<span class="tag">合太岁</span>');
+
+      // 重大转折
+      if (fourZheng.has(zhi)) tags.push('<span class="tag tag-red">重大转折</span>');
+
+      // 贵人/小人（年干与日干）
+      if (ganHe[dayGan] === gan) tags.push('<span class="tag tag-green">贵人</span>');
+      if (ganChong[dayGan] === gan) tags.push('<span class="tag tag-amber">小人</span>');
+
+      // —— 年度评分 —— //
+      // 基础 50；年干喜用 +20；年支喜用 +12；年干忌神 -20；年支忌神 -12；
+      // 合太岁 +5；冲太岁 -5；本命年 ±0（只提示）；四正 +4（视为节点能量）
+      let score = 50;
+      const ganW = wuxingGan[gan], zhiW = wuxingZhi[zhi];
+      const marks = [];
+
+      if (yongSet.has(ganW)) { score += 20; marks.push(`年干${gan}属${ganW}∈喜用 +20`); }
+      if (yongSet.has(zhiW)) { score += 12; marks.push(`年支${zhi}属${zhiW}∈喜用 +12`); }
+      if (jiSet.has(ganW))   { score -= 20; marks.push(`年干${gan}属${ganW}∈忌神 −20`); }
+      if (jiSet.has(zhiW))   { score -= 12; marks.push(`年支${zhi}属${zhiW}∈忌神 −12`); }
+
+      if (animal === myAnimal) { marks.push('本命年（提示）'); }
+      if (clashSX[myAnimal] === animal) { score -= 5; marks.push('冲太岁 −5'); }
+      if (heSX[myAnimal] === animal) { score += 5; marks.push('合太岁 +5'); }
+      if (fourZheng.has(zhi)) { score += 4; marks.push('四正节点 +4'); }
+
+      // 限幅
+      score = Math.max(0, Math.min(100, score));
+
+      // 说明文案（简短建议）
+      const adv = buildAdvice({score, gan, ganW, zhi, zhiW, tags});
+
+      rows.push({Y, gz, animal, tags:tags.join(' '), score, adv});
     }
 
-    // 八字生成
-    function generateBazi() {
-      const y = parseInt(document.getElementById('year').value);
-      const m = parseInt(document.getElementById('month').value);
-      const d = parseInt(document.getElementById('day').value);
-      const h = parseInt(document.getElementById('hour').value);
-      const solar = Solar.fromYmdHms(y, m, d, h, 0, 0);
-      const lunar = solar.getLunar();
+    // 摘要：Top5 / Bottom5
+    const top5 = [...rows].sort((a,b)=>b.score-a.score).slice(0,5);
+    const low5 = [...rows].sort((a,b)=>a.score-b.score).slice(0,5);
+    const sText = [
+      `最旺 TOP5：${top5.map(r=>`${r.Y}(${r.gz}：${r.score})`).join('，')}`,
+      `需谨慎 TOP5：${low5.map(r=>`${r.Y}(${r.gz}：${r.score})`).join('，')}`
+    ].join(' ｜ ');
+    document.getElementById('summaryText').textContent = sText;
 
-      const bazi = {
-        year: lunar.getYearInGanZhi(),
-        month: lunar.getMonthInGanZhi(),
-        day: lunar.getDayInGanZhi(),
-        hour: lunar.getTimeInGanZhi()
-      };
+    // 渲染表格
+    rows.forEach((r,idx)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td>${r.Y}${(new Date().getFullYear()===r.Y)?'（今年）':''}</td>
+        <td>${r.gz}</td>
+        <td>${r.animal}</td>
+        <td>${r.tags}</td>
+        <td class="goodCell">${r.score}</td>
+        <td>${r.adv}</td>`;
+      tbody.appendChild(tr);
+    });
 
-      document.getElementById('baziResult').innerHTML = `
-        <p>公历: ${y}-${m}-${d} ${h}:00</p>
-        <p>农历: ${lunar.toFullString()}</p>
-        <p>八字: ${bazi.year}年 ${bazi.month}月 ${bazi.day}日 ${bazi.hour}时</p>
-      `;
+    document.getElementById('panelLuck').style.display='block';
+  }
 
-      analyzeMingGe(bazi);
+  function buildAdvice({score, gan, ganW, zhi, zhiW, tags}) {
+    const t = (tags||[]).toString();
+    const parts = [];
+    if (score >= 80) parts.push('顺势扩张，宜立目标与冲刺关键项目');
+    else if (score >= 65) parts.push('稳中有进，适合迭代与积累');
+    else if (score >= 50) parts.push('平稳运营，控制成本与风险');
+    else if (score >= 35) parts.push('保守为主，聚焦修复与学习');
+    else parts.push('谨慎行事，避免重资产与大决策');
+
+    // 根据干支五行补充一句
+    parts.push(`干${gan}（${ganW}）支${zhi}（${zhiW}）`);
+    if (t.includes('贵人')) parts.push('贵人助力，宜合作/背书');
+    if (t.includes('小人')) parts.push('人事考验，提前做预案');
+    if (t.includes('重大转折')) parts.push('节点年，适合定方向/搬迁/转型');
+
+    return parts.join； // 这里用中文分号更自然
+  }
+
+  // 内建测试
+  function runTests() {
+    const st = document.getElementById('engineStatus');
+    st.textContent = '排盘引擎：lunar-javascript（测试中…）'; st.classList.remove('green','red'); st.classList.add('orange');
+    const out=[];
+    try{
+      if(!window.Solar||!window.Lunar) throw new Error('引擎未加载');
+      out.push('✅ 引擎全局对象存在');
+      const s1=Solar.fromYmd(1990,1,1);
+      const l1=s1.getLunar();
+      out.push('✅ 1990-01-01 转农历：'+l1.toFullString());
+      const ec=l1.getEightChar();
+      out.push('✅ 四柱：'+[ec.getYear(),ec.getMonth(),ec.getDay(),ec.getTime()].join(' '));
+      const s2=Solar.fromYmdHms(2000,5,20,14,0,0);
+      out.push('✅ fromYmdHms：'+s2.toString());
+      st.textContent='排盘引擎：lunar-javascript（已就绪）'; st.classList.remove('orange'); st.classList.add('green');
+    }catch(e){
+      out.push('❌ 测试失败：'+e.message);
+      st.textContent='排盘引擎：lunar-javascript（加载失败）'; st.classList.remove('orange'); st.classList.add('red');
     }
+    document.getElementById('panelBazi').style.display='block';
+    document.getElementById('baziText').textContent=out.join('\n');
+    document.getElementById('kpi').innerHTML='';
+    document.getElementById('yongshenBox').innerHTML='';
+  }
 
-    // 命格分析 & 喜用神
-    function analyzeMingGe(bazi) {
-      const stems = [bazi.year[0], bazi.month[0], bazi.day[0], bazi.hour[0]];
-      const wuxingCount = {木:0,火:0,土:0,金:0,水:0};
-
-      stems.forEach(stem => {
-        if (wuxingMap[stem]) wuxingCount[wuxingMap[stem]]++;
-      });
-
-      const dayMaster = wuxingMap[bazi.day[0]]; // 日主五行
-      let strongWeak = "中和";
-      if (wuxingCount[dayMaster] >= 3) strongWeak = "偏强";
-      if (wuxingCount[dayMaster] === 0) strongWeak = "偏弱";
-
-      // 推荐喜用神（简单规则：日主强 → 喜泄耗制；日主弱 → 喜扶抑助）
-      let yongshen = "";
-      if (strongWeak === "偏强") {
-        if (dayMaster === "木") yongshen = "金/火";
-        if (dayMaster === "火") yongshen = "水/土";
-        if (dayMaster === "土") yongshen = "木/水";
-        if (dayMaster === "金") yongshen = "火/木";
-        if (dayMaster === "水") yongshen = "土/火";
-      } else if (strongWeak === "偏弱") {
-        if (dayMaster === "木") yongshen = "水/木";
-        if (dayMaster === "火") yongshen = "木/火";
-        if (dayMaster === "土") yongshen = "火/土";
-        if (dayMaster === "金") yongshen = "土/金";
-        if (dayMaster === "水") yongshen = "金/水";
-      } else {
-        yongshen = "平衡五行，灵活取用";
-      }
-
-      document.getElementById('minggeResult').innerHTML = `
-        <p>日主五行: <b>${dayMaster}</b></p>
-        <p>五行分布: 木${wuxingCount.木} 火${wuxingCount.火} 土${wuxingCount.土} 金${wuxingCount.金} 水${wuxingCount.水}</p>
-        <p>命局强弱: ${strongWeak}</p>
-        <p>推荐喜用神: ${yongshen}</p>
-      `;
-
-      scoreSystem(wuxingCount, strongWeak);
-    }
-
-    // 评分系统
-    function scoreSystem(wuxingCount, strongWeak) {
-      let score = 60;
-
-      // 五行均衡度（理想是 2±1）
-      const values = Object.values(wuxingCount);
-      const deviation = values.map(v => Math.abs(v - 2)).reduce((a,b)=>a+b,0);
-      score += Math.max(0, 20 - deviation*3);
-
-      // 强弱修正
-      if (strongWeak === "偏强" || strongWeak === "偏弱") score -= 10;
-
-      if (score > 100) score = 100;
-      if (score < 0) score = 0;
-
-      document.getElementById('scoreResult').textContent = "命局评分: " + score + " / 100";
-    }
-
-    // 运势生成
-    function generateLuck() {
-      const y = parseInt(document.getElementById('year').value);
-      const m = parseInt(document.getElementById('month').value);
-      const d = parseInt(document.getElementById('day').value);
-      const h = parseInt(document.getElementById('hour').value);
-      const solar = Solar.fromYmdHms(y, m, d, h, 0, 0);
-      const startYear = solar.getYear();
-      const luckList = document.getElementById('luckResult');
-      luckList.innerHTML = '';
-
-      for (let i = 0; i < 60; i++) {
-        const year = startYear + i;
-        const s = Solar.fromYmd(year, m, d);
-        const l = s.getLunar();
-        const gz = l.getYearInGanZhi();
-
-        let tip = '';
-        if (gz.includes('财')) tip = '财运增强';
-        else if (gz.includes('官')) tip = '事业关键年';
-        else if (gz.includes('印')) tip = '学习提升';
-        else if (gz.includes('比')) tip = '需防竞争';
-        else tip = '平稳发展';
-
-        const li = document.createElement('li');
-        li.textContent = `${year}年 (${gz}) - ${tip}`;
-        luckList.appendChild(li);
-      }
-    }
-  </script>
+  // 事件绑定
+  document.getElementById('btnBazi').addEventListener('click', generateBazi);
+  document.getElementById('btnLuck').addEventListener('click', generateLuck60);
+  document.getElementById('btnTest').addEventListener('click', runTests);
+</script>
 </body>
 </html>
