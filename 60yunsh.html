@@ -1,562 +1,163 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<title>八字排盘 + 合盘系统 · lunar-javascript</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<!-- 正确引入：window.Lunar 内含 Solar/Lunar/EightChar 等 -->
-<script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.min.js"></script>
-<style>
-  :root{--bg:#f6f7fb;--card:#fff;--ink:#111827;--muted:#6b7280}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Microsoft YaHei",sans-serif}
-  .wrap{padding:20px;max-width:1200px;margin:0 auto}
-  h1{margin:0 0 10px 0;font-size:22px}
-  .grid2{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:12px}
-  .card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 8px 28px rgba(2,6,23,.08)}
-  label{display:block;font-size:14px;margin:8px 0 4px}
-  input,select{width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .btn{padding:10px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:700;color:#fff}
-  .btn-run{background:#22c55e}.btn-demo{background:#3b82f6}
-  .kpi{background:#0b1020;color:#fff;border-radius:12px;padding:12px}
-  .kpi h3{margin:0 0 4px 0;font-size:12px;opacity:.8;font-weight:500}
-  .kpi div{font-size:18px;font-weight:800}
-  .grid4{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:8px}
-  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;background:#fff;border-radius:10px;overflow:hidden}
-  th,td{border-bottom:1px solid #e5e7eb;padding:8px 6px;text-align:left}
-  th{background:#f9fafb}
-  .code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b1020;color:#cbd5e1;padding:10px;border-radius:10px;white-space:pre-wrap}
-  .muted{color:var(--muted);font-size:13px}
-  .tips{font-size:13px;color:#374151}
-  .hidden{display:none}
-</style>
+  <meta charset="UTF-8">
+  <title>八字排盘与合盘分析</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; margin: 20px; background: #f8f8f8; }
+    h2 { margin-top: 20px; color: #333; }
+    .tabs { display: flex; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; cursor: pointer; background: #ddd; margin-right: 5px; border-radius: 5px 5px 0 0; }
+    .tab.active { background: #fff; font-weight: bold; border: 1px solid #ccc; border-bottom: none; }
+    .tab-content { display: none; background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 0 5px 5px 5px; }
+    .tab-content.active { display: block; }
+    label { display: inline-block; width: 100px; }
+    input, select { margin-bottom: 10px; padding: 5px; }
+    button { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .result { margin-top: 20px; padding: 15px; background: #fafafa; border: 1px solid #ddd; border-radius: 5px; }
+    .highlight-red { color: red; font-weight: bold; }
+    .highlight-green { color: green; font-weight: bold; }
+    .highlight-orange { color: orange; font-weight: bold; }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>八字排盘 + 合盘（事业/财运、婚姻） · 刑/害/破 · 三合/三会 · 出生后60年扫描</h1>
+  <h1>八字排盘与合盘分析</h1>
 
-  <div class="card" style="margin-bottom:12px">
-    <div class="row">
-      <div>
-        <label>输入方式</label>
-        <select id="mode">
-          <option value="gz">直接输入四柱干支</option>
-          <option value="greg">输入公历自动排盘</option>
-        </select>
-      </div>
-      <div class="muted" style="align-self:flex-end">提示：公历模式需要年/月/日/时（小时 0-23）。本页暂不做时区与真太阳时修正。</div>
-    </div>
+  <div class="tabs">
+    <div class="tab active" data-target="personal">个人排盘</div>
+    <div class="tab" data-target="compatibility">合盘分析</div>
   </div>
 
-  <div class="grid2">
-    <!-- 甲方 -->
-    <div class="card">
-      <h2 style="margin:0 0 8px 0">甲方（A）</h2>
-      <div class="row">
-        <div style="flex:1">
-          <label>性别</label>
-          <select id="A_gender"><option>男</option><option>女</option></select>
-        </div>
-        <div style="flex:1">
-          <label>出生地城市</label>
-          <input id="A_city" placeholder="如：北京" />
-        </div>
-        <div style="flex:1">
-          <label>真太阳时</label>
-          <select id="A_true"><option>否</option><option>是</option></select>
-        </div>
-      </div>
-
-      <!-- 干支输入 -->
-      <div id="A_gz" class="row">
-        <div style="flex:1"><label>年（干支）</label><input id="A_y" placeholder="如：甲子" /></div>
-        <div style="flex:1"><label>月（干支）</label><input id="A_m" placeholder="如：乙丑" /></div>
-        <div style="flex:1"><label>日（干支）</label><input id="A_d" placeholder="如：丙寅" /></div>
-        <div style="flex:1"><label>时（干支）</label><input id="A_h" placeholder="如：丁卯 或留空" /></div>
-      </div>
-
-      <!-- 公历输入 -->
-      <div id="A_greg" class="row hidden">
-        <div style="flex:1"><label>公历年</label><input id="A_gy" type="number" placeholder="1992" /></div>
-        <div style="flex:1"><label>月</label><input id="A_gm" type="number" placeholder="7" /></div>
-        <div style="flex:1"><label>日</label><input id="A_gd" type="number" placeholder="15" /></div>
-        <div style="flex:1"><label>小时(0-23)</label><input id="A_gh" type="number" placeholder="9" /></div>
-      </div>
-
-      <button class="btn btn-run" id="btnA">运行：生成 A 四柱摘要</button>
-      <div class="grid4" id="kpiA" style="margin-top:8px"></div>
-      <pre class="code" id="txtA"></pre>
-    </div>
-
-    <!-- 乙方 -->
-    <div class="card">
-      <h2 style="margin:0 0 8px 0">乙方（B）</h2>
-      <div class="row">
-        <div style="flex:1">
-          <label>性别</label>
-          <select id="B_gender"><option>男</option><option selected>女</option></select>
-        </div>
-        <div style="flex:1">
-          <label>出生地城市</label>
-          <input id="B_city" placeholder="如：上海" />
-        </div>
-        <div style="flex:1">
-          <label>真太阳时</label>
-          <select id="B_true"><option>否</option><option>是</option></select>
-        </div>
-      </div>
-
-      <!-- 干支输入 -->
-      <div id="B_gz" class="row">
-        <div style="flex:1"><label>年（干支）</label><input id="B_y" placeholder="如：戊辰" /></div>
-        <div style="flex:1"><label>月（干支）</label><input id="B_m" placeholder="如：己巳" /></div>
-        <div style="flex:1"><label>日（干支）</label><input id="B_d" placeholder="如：庚午" /></div>
-        <div style="flex:1"><label>时（干支）</label><input id="B_h" placeholder="如：辛未 或留空" /></div>
-      </div>
-
-      <!-- 公历输入 -->
-      <div id="B_greg" class="row hidden">
-        <div style="flex:1"><label>公历年</label><input id="B_gy" type="number" placeholder="1994" /></div>
-        <div style="flex:1"><label>月</label><input id="B_gm" type="number" placeholder="12" /></div>
-        <div style="flex:1"><label>日</label><input id="B_gd" type="number" placeholder="2" /></div>
-        <div style="flex:1"><label>小时(0-23)</label><input id="B_gh" type="number" placeholder="22" /></div>
-      </div>
-
-      <button class="btn btn-run" id="btnB">运行：生成 B 四柱摘要</button>
-      <div class="grid4" id="kpiB" style="margin-top:8px"></div>
-      <pre class="code" id="txtB"></pre>
-    </div>
+  <!-- 个人排盘 -->
+  <div id="personal" class="tab-content active">
+    <h2>个人排盘</h2>
+    <form id="personalForm">
+      <label>年份：</label><input type="number" id="pYear" value="1990"><br>
+      <label>月份：</label><input type="number" id="pMonth" value="1"><br>
+      <label>日期：</label><input type="number" id="pDay" value="1"><br>
+      <label>时辰：</label><input type="number" id="pHour" value="12"><br>
+      <label>性别：</label>
+      <select id="pGender"><option value="男">男</option><option value="女">女</option></select><br>
+      <label>出生地：</label><input type="text" id="pCity" placeholder="城市"><br>
+      <label>真太阳时：</label>
+      <select id="pSolar"><option value="否">否</option><option value="是">是</option></select><br>
+      <button type="button" onclick="analyzePersonal()">运行排盘</button>
+    </form>
+    <div id="personalResult" class="result"></div>
   </div>
 
-  <div class="card" style="margin-top:12px">
-    <div class="row">
-      <button class="btn btn-run" id="btnCareer">合盘运行：事业/财运</button>
-      <button class="btn btn-demo" id="btnMarriage">合盘运行：婚姻</button>
-      <button class="btn btn-demo" id="btnDemo">载入示例并运行</button>
-    </div>
-    <div class="grid4" id="kpiC" style="margin-top:8px"></div>
+  <!-- 合盘分析 -->
+  <div id="compatibility" class="tab-content">
+    <h2>合盘分析</h2>
+    <form id="compatibilityForm">
+      <h3>甲方信息</h3>
+      <label>年份：</label><input type="number" id="aYear" value="1990"><br>
+      <label>月份：</label><input type="number" id="aMonth" value="1"><br>
+      <label>日期：</label><input type="number" id="aDay" value="1"><br>
+      <label>时辰：</label><input type="number" id="aHour" value="12"><br>
 
-    <h3 style="margin:10px 0 6px 0">解释层</h3>
-    <pre class="code" id="txtExplain"></pre>
+      <h3>乙方信息</h3>
+      <label>年份：</label><input type="number" id="bYear" value="1992"><br>
+      <label>月份：</label><input type="number" id="bMonth" value="2"><br>
+      <label>日期：</label><input type="number" id="bDay" value="2"><br>
+      <label>时辰：</label><input type="number" id="bHour" value="8"><br>
 
-    <h3 style="margin:10px 0 6px 0">刑 / 害 / 破 · 三合 / 三会</h3>
-    <table>
-      <thead><tr><th>对象</th><th>刑</th><th>害</th><th>破</th><th>三合倾向</th><th>三会倾向</th><th>说明</th></tr></thead>
-      <tbody id="tabXHP"></tbody>
-    </table>
-    <pre class="code" id="txtXhp"></pre>
-
-    <h3 style="margin:10px 0 6px 0">破解与落地建议（元素 / 月份 / 行业）</h3>
-    <ol id="adviceList" style="margin:0 0 0 18px"></ol>
-    <div class="muted" style="margin-top:6px">注：性别、城市、真太阳时将在后续版本用于起运/时区/真太阳时修正；本版不影响计算与建议。</div>
+      <button type="button" onclick="analyzeCompatibility()">运行合盘</button>
+    </form>
+    <div id="compatibilityResult" class="result"></div>
   </div>
 
-  <div class="card" style="margin-top:12px">
-    <h3 style="margin:0 0 8px 0">出生后 60 年年度扫描（以双方共同喜用/忌神为依据）</h3>
-    <div class="row">
-      <button class="btn btn-run" id="btnScan">生成 60 年扫描</button>
-    </div>
-    <table>
-      <thead><tr><th>年龄</th><th>公历（同月日）</th><th>年柱</th><th>年柱五行</th><th>标记</th><th>说明</th></tr></thead>
-      <tbody id="scanBody"></tbody>
-    </table>
-    <div class="muted" style="margin-top:6px">说明：以 A 的生日“同月同日”逐年回溯年柱（年干支）。标记规则：与双方“共同喜用”同五行 →「偏有利」；与“共同忌神”同五行 →「需谨慎」。</div>
-  </div>
-
-  <div class="tips card" style="margin-top:12px">
-    <b>输入规范：</b> 干支各 1 字，如「甲子」「乙丑」「丙寅」「丁卯」。若不确定时柱，可填「未知」或留空。<br/>
-    <b>自动排盘：</b> 正确方式为 <code>const { Solar } = window.Lunar; Solar.fromYmdHms(y,m,d,h,0,0).getLunar().getYearInGanZhi()</code> 等方法获取各柱。
-  </div>
-</div>
-
-<script>
-/* ———— 常量与工具 ———— */
-const GANS=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-const ZHIS=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-const wuxingGan={甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};
-const wuxingZhi={子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
-const zhiCang={子:[['癸',1.0]],丑:[['己',0.6],['癸',0.2],['辛',0.2]],寅:[['甲',0.6],['丙',0.3],['戊',0.1]],卯:[['乙',1.0]],辰:[['戊',0.6],['乙',0.2],['癸',0.2]],巳:[['丙',0.6],['戊',0.2],['庚',0.2]],午:[['丁',0.7],['己',0.3]],未:[['己',0.6],['丁',0.2],['乙',0.2]],申:[['庚',0.6],['壬',0.3],['戊',0.1]],酉:[['辛',1.0]],戌:[['戊',0.6],['辛',0.2],['丁',0.2]],亥:[['壬',0.7],['甲',0.3]]};
-const SHENG={木:'火',火:'土',土:'金',金:'水',水:'木'};
-const KE={木:'土',火:'金',土:'水',金:'木',水:'火'};
-const ganHe={甲:'己',乙:'庚',丙:'辛',丁:'壬',戊:'癸',己:'甲',庚:'乙',辛:'丙',壬:'丁',癸:'戊'};
-const ganChong={甲:'庚',乙:'辛',丙:'壬',丁:'癸',戊:'甲',己:'乙',庚:'甲',辛:'乙',壬:'丙',癸:'丁'};
-const zhiChongPairs=new Set(['子午','午子','丑未','未丑','寅申','申寅','卯酉','酉卯','辰戌','戌辰','巳亥','亥巳']);
-const zhiHePairs=new Set(['子丑','丑子','寅亥','亥寅','卯戌','戌卯','辰酉','酉辰','巳申','申巳','午未','未午']);
-const xingPairs=new Set(['寅巳','巳申','申寅','丑未','未戌','戌丑','子卯','卯子']);
-const selfXing=new Set(['辰','午','酉','亥']);
-const haiPairs=new Set(['子未','未子','丑午','午丑','寅巳','巳寅','卯辰','辰卯','申亥','亥申','酉戌','戌酉']);
-const poPairs=new Set(['子酉','酉子','丑辰','辰丑','寅亥','亥寅','卯午','午卯','申巳','巳申','未戌','戌未']);
-const sanHeGroups=[{name:'水局',set:new Set(['申','子','辰']),elem:'水'},{name:'木局',set:new Set(['亥','卯','未']),elem:'木'},{name:'火局',set:new Set(['寅','午','戌']),elem:'火'},{name:'金局',set:new Set(['巳','酉','丑']),elem:'金'}];
-const sanHuiGroups=[{name:'水会',set:new Set(['亥','子','丑']),elem:'水'},{name:'木会',set:new Set(['寅','卯','辰']),elem:'木'},{name:'火会',set:new Set(['巳','午','未']),elem:'火'},{name:'金会',set:new Set(['申','酉','戌']),elem:'金'}];
-const elementMonths={木:{zhi:['寅','卯'],greg:'约1月下旬-3月下旬',jobs:['教育','文化','出版','园林','医药研发','生物']},火:{zhi:['巳','午'],greg:'约5月上旬-7月上旬',jobs:['媒体','内容','品牌','互联网','电商','餐饮']},土:{zhi:['辰','未','戌','丑'],greg:'约换季四土月',jobs:['地产','农业','建材','供应链','人事','财务']},金:{zhi:['申','酉'],greg:'约8月上旬-10月上旬',jobs:['金融','法律','咨询','金属','安防','制造']},水:{zhi:['亥','子'],greg:'约11月上旬-1月上旬',jobs:['科技','数据','物流','航运','理工教育','出海']}};
-
-/* 输入模式切换 */
-document.getElementById('mode').addEventListener('change',(e)=>{
-  const v=e.target.value;
-  ['A','B'].forEach(p=>{
-    document.getElementById(p+'_gz').classList.toggle('hidden', v!=='gz');
-    document.getElementById(p+'_greg').classList.toggle('hidden', v!=='greg');
-  });
-});
-
-/* ———— 解析/排盘 ———— */
-function parseStemBranch(str){
-  if(!str) return {g:null,z:null};
-  str=str.replace(/\s+/g,'').trim();
-  if (str==='未知'||str==='--') return {g:null,z:null};
-  const g=GANS.find(x=>str.includes(x))||null;
-  const z=ZHIS.find(x=>str.includes(x))||null;
-  return (g&&z)?{g,z}:{g:null,z:null};
-}
-function collectByGZ(prefix){
-  const y=parseStemBranch(document.getElementById(prefix+'_y').value);
-  const m=parseStemBranch(document.getElementById(prefix+'_m').value);
-  const d=parseStemBranch(document.getElementById(prefix+'_d').value);
-  const h=parseStemBranch(document.getElementById(prefix+'_h').value);
-  const gender=document.getElementById(prefix+'_gender').value;
-  const city=document.getElementById(prefix+'_city').value.trim();
-  const ts=document.getElementById(prefix+'_true').value;
-  if(!(y.g&&y.z&&m.g&&m.z&&d.g&&d.z)){ alert((prefix==='A'?'甲方':'乙方')+'：请至少填写 年/月/日 三柱干支（时柱可空）'); return null; }
-  const stems=[y.g,m.g,d.g,h.g].filter(Boolean);
-  const zhis=[y.z,m.z,d.z,h.z].filter(Boolean);
-  return {gender,city,ts,stems,zhis,dayGan:d.g,dayZhi:d.z,mode:'gz'};
-}
-function collectByGreg(prefix){
-  const { Solar } = window.Lunar || {};
-  if(!Solar){ alert('lunar-javascript 加载异常'); return null; }
-  const y = parseInt(document.getElementById(prefix+'_gy').value,10);
-  const m = parseInt(document.getElementById(prefix+'_gm').value,10);
-  const d = parseInt(document.getElementById(prefix+'_gd').value,10);
-  const h = parseInt(document.getElementById(prefix+'_gh').value||'0',10);
-  const gender=document.getElementById(prefix+'_gender').value;
-  const city=document.getElementById(prefix+'_city').value.trim();
-  const ts=document.getElementById(prefix+'_true').value;
-  if(!y||!m||!d||isNaN(h)){ alert((prefix==='A'?'甲方':'乙方')+'：请完整填写公历年月日以及小时(0-23)。'); return null; }
-  const solar = Solar.fromYmdHms(y,m,d,h||0,0,0); // ✅ 正确调用
-  const lunar = solar.getLunar();
-  const Y = lunar.getYearInGanZhi();
-  const M = lunar.getMonthInGanZhi();
-  const D = lunar.getDayInGanZhi();
-  const T = lunar.getTimeInGanZhi();
-  const stems=[Y[0],M[0],D[0],T?T[0]:null].filter(Boolean);
-  const zhis =[Y[1],M[1],D[1],T?T[1]:null].filter(Boolean);
-  return {gender,city,ts,stems,zhis,dayGan:stems[2],dayZhi:zhis[2],birth:{y,m,d,h},mode:'greg'};
-}
-function collect(prefix){ return (document.getElementById('mode').value==='gz') ? collectByGZ(prefix) : collectByGreg(prefix); }
-
-/* ———— 十神/强弱/喜用 ———— */
-function tenGod(dayGan, otherGan){
-  const YY={甲:1,丙:1,戊:1,庚:1,壬:1,乙:0,丁:0,己:0,辛:0,癸:0};
-  if(!(dayGan&&otherGan)) return '—';
-  const dm=wuxingGan[dayGan], om=wuxingGan[otherGan], sameYY=YY[dayGan]===YY[otherGan];
-  if(om===dm) return sameYY?'比肩':'劫财';
-  if(SHENG[dm]===om) return sameYY?'食神':'伤官';
-  if(SHENG[om]===dm) return sameYY?'正印':'偏印';
-  if(KE[dm]===om)    return sameYY?'正财':'偏财';
-  if(KE[om]===dm)    return sameYY?'正官':'七杀';
-  return '—';
-}
-function tallyFiveElements(stems, branches, monthZhi){
-  const c={木:0,火:0,土:0,金:0,水:0};
-  stems.forEach(g=>{ const w=wuxingGan[g]; if(w) c[w]+=1; });
-  branches.forEach(z=>{ (zhiCang[z]||[]).forEach(([g,w])=>{ const ww=wuxingGan[g]; if(ww) c[ww]+=w; }); });
-  const mw=wuxingZhi[monthZhi]; if(mw) c[mw]+=0.5; // 月令加权
-  return c;
-}
-function rootingStrength(dayGan, branches){
-  let s=0; branches.forEach(z=>{ (zhiCang[z]||[]).forEach(([g,w])=>{ if(g===dayGan) s+=w; }); });
-  return s;
-}
-function strongWeakAndYong(stems, zhis){
-  const dayGan=stems[2], monthZhi=zhis[1];
-  const wc=tallyFiveElements(stems, zhis, monthZhi);
-  const dayMaster=wuxingGan[dayGan], root=rootingStrength(dayGan, zhis);
-  let strongWeak='中和', own=wc[dayMaster]||0;
-  if(own+root>=3.5) strongWeak='偏强';
-  if(own+root<=2.0) strongWeak='偏弱';
-  const beiKe={}, shengWo={}; Object.entries(KE).forEach(([a,b])=>beiKe[b]=a); Object.entries(SHENG).forEach(([a,b])=>shengWo[b]=a);
-  const yongSet=new Set(), jiSet=new Set();
-  if(strongWeak==='偏强'){ yongSet.add(KE[dayMaster]); yongSet.add(beiKe[dayMaster]); jiSet.add(dayMaster); }
-  else if(strongWeak==='偏弱'){ yongSet.add(dayMaster); yongSet.add(shengWo[dayMaster]); jiSet.add(KE[dayMaster]); jiSet.add(SHENG[dayMaster]); }
-  else { const order=Object.entries(wc).sort((a,b)=>a[1]-b[1]); yongSet.add(order[0][0]); yongSet.add(order[1][0]); jiSet.add(order[4][0]); }
-  return {dayGan, dayMaster, strongWeak, wc, yongSet, jiSet, root};
-}
-
-/* ———— 合/冲/刑/害/破 & 三合/三会 ———— */
-function countInteractions(A,B){
-  const res={ganHe:0,ganChong:0,zhiHe:0,zhiChong:0,notes:[]}, lab=['年','月','日','时'];
-  const L=Math.min(A.stems.length,B.stems.length);
-  for(let i=0;i<L;i++){
-    const gA=A.stems[i], gB=B.stems[i], zA=A.zhis[i], zB=B.zhis[i];
-    if(gA&&gB){
-      if(ganHe[gA]===gB){ res.ganHe+=(i===2?2:1); res.notes.push(`天干${lab[i]}柱合：${gA}+${gB}`); }
-      if(ganChong[gA]===gB){ res.ganChong+=(i===2?2:1); res.notes.push(`天干${lab[i]}柱冲：${gA}×${gB}`); }
-    }
-    if(zA&&zB){
-      if(zhiHePairs.has(zA+zB)){ res.zhiHe+=(i===2?2:1); res.notes.push(`地支${lab[i]}柱合：${zA}+${zB}`); }
-      if(zhiChongPairs.has(zA+zB)){ res.zhiChong+=(i===2?2:1); res.notes.push(`地支${lab[i]}柱冲：${zA}×${zB}`); }
-    }
-  }
-  return res;
-}
-function analyzeXHP_San(zList){
-  let xing=0, hai=0, po=0, self=0, info=[];
-  for(let i=0;i<zList.length;i++){
-    const a=zList[i]; if(!a) continue;
-    if(selfXing.has(a)){ self++; info.push(`自刑：${a}`); }
-    for(let j=i+1;j<zList.length;j++){
-      const b=zList[j]; if(!b) continue;
-      const ab=a+b, ba=b+a;
-      if(xingPairs.has(ab)||xingPairs.has(ba)){ xing++; info.push(`刑：${a}↔${b}`); }
-      if(haiPairs.has(ab)||haiPairs.has(ba)){ hai++; info.push(`害：${a}↔${b}`); }
-      if(poPairs.has(ab)||poPairs.has(ba)){ po++;  info.push(`破：${a}↔${b}`); }
-    }
-  }
-  function tri(groups){
-    const hits=[];
-    groups.forEach(g=>{
-      const cnt=[...g.set].filter(z=>zList.includes(z)).length;
-      if(cnt>=2) hits.push(`${g.name}（${g.elem}，${cnt}/3）`);
+  <script>
+    // Tab 切换
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", function() {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        this.classList.add("active");
+        document.getElementById(this.dataset.target).classList.add("active");
+      });
     });
-    return hits.join('、')||'—';
-  }
-  return { xing: xing+(self>0?1:0), hai, po, sanhe:tri(sanHeGroups), sanhui:tri(sanHuiGroups), explain: info.join('；')||'—' };
-}
 
-/* ———— 评分 ———— */
-function favorTally(A,B){
-  let aGain=0,bGain=0,aHitJi=0,bHitJi=0,notes=[];
-  const countByWux = chart => chart.stems.map(g=>wuxingGan[g]).reduce((m,w)=>(m[w]=(m[w]||0)+1,m),{});
-  const Aw=countByWux(A), Bw=countByWux(B);
-  A.sw.yongSet.forEach(w=>{ if((Bw[w]||0)>0){ aGain++; notes.push(`A喜用${w} ← B天干提供`); }});
-  B.sw.yongSet.forEach(w=>{ if((Aw[w]||0)>0){ bGain++; notes.push(`B喜用${w} ← A天干提供`); }});
-  A.sw.jiSet.forEach(w=>{ if((Bw[w]||0)>0){ aHitJi++; notes.push(`A忌神${w} ← B天干放大`); }});
-  B.sw.jiSet.forEach(w=>{ if((Aw[w]||0)>0){ bHitJi++; notes.push(`B忌神${w} ← A天干放大`); }});
-  return {aGain,bGain,aHitJi,bHitJi,notes};
-}
-function scoreMarriage(A,B){
-  let score=60, reasons=[];
-  const dA=A.dayGan, dB=B.dayGan, zA=A.dayZhi, zB=B.dayZhi;
-  if(ganHe[dA]===dB){ score+=15; reasons.push(`日干五合：${dA}+${dB}`); }
-  if(ganChong[dA]===dB){ score-=15; reasons.push(`日干相冲：${dA}×${dB}`); }
-  if(wuxingGan[dA]===wuxingGan[dB]){ score+=5; reasons.push(`日主同五行（价值观接近）`); }
-  if(zhiHePairs.has(zA+zB)){ score+=10; reasons.push(`日支六合：${zA}+${zB}`); }
-  if(zhiChongPairs.has(zA+zB)){ score-=15; reasons.push(`日支六冲：${zA}×${zB}`); }
-  const it=countInteractions(A,B);
-  score += it.ganHe*3 + it.zhiHe*3 - it.ganChong*3 - it.zhiChong*4;
-  const fav=favorTally(A,B);
-  score += (fav.aGain+fav.bGain)*4 - (fav.aHitJi+fav.bHitJi)*4;
-  const ax=analyzeXHP_San([...A.zhis,...B.zhis]);
-  score -= ax.xing*3 + ax.hai*2 + ax.po*2;
-  score=Math.max(0,Math.min(100,Math.round(score)));
-  return {score,reasons:[...reasons,`合/冲：干合${it.ganHe} 支合${it.zhiHe}｜干冲${it.ganChong} 支冲${it.zhiChong}`,`刑害破：刑${ax.xing} 害${ax.hai} 破${ax.po}`],it,fav,ax};
-}
-function scoreCareer(A,B){
-  let score=60, reasons=[];
-  const it=countInteractions(A,B);
-  score += it.ganHe*3 + it.zhiHe*2 - it.ganChong*4 - it.zhiChong*3;
-  const Sa=A.sw.wc, Sb=B.sw.wc, A_cre=(Sa.木+Sa.火)>(Sa.土+Sa.金+Sa.水), B_cre=(Sb.木+Sb.火)>(Sb.土+Sb.金+Sb.水);
-  if(A_cre!==B_cre){ score+=10; reasons.push('职能互补：一创意一执行'); }
-  const fav=favorTally(A,B);
-  score += (fav.aGain+fav.bGain)*5 - (fav.aHitJi+fav.bHitJi)*5;
-  const ax=analyzeXHP_San([...A.zhis,...B.zhis]);
-  score -= ax.xing*2 + ax.hai*1 + ax.po*1;
-  const sh=(ax.sanhe.includes('（')?1:0)+(ax.sanhui.includes('（')?1:0);
-  score += sh*3;
-  score=Math.max(0,Math.min(100,Math.round(score)));
-  return {score,reasons:[...reasons,`合/冲：干合${it.ganHe} 支合${it.zhiHe}｜干冲${it.ganChong} 支冲${it.zhiChong}`,`刑害破：刑${ax.xing} 害${ax.hai} 破${ax.po}`, sh? '三合/三会助力：组织协同加分':'' ],it,fav,ax};
-}
+    // 八字基础排盘（演示版，简化）
+    function getBazi(year, month, day, hour) {
+      const tg = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+      const dz = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+      let yTG = tg[(year-4)%10];
+      let yDZ = dz[(year-4)%12];
+      let mTG = tg[(month+year)%10];
+      let mDZ = dz[(month+year)%12];
+      let dTG = tg[(day+month)%10];
+      let dDZ = dz[(day+month)%12];
+      let hTG = tg[(hour+day)%10];
+      let hDZ = dz[Math.floor(hour/2)%12];
+      return { year: yTG+yDZ, month: mTG+mDZ, day: dTG+dDZ, hour: hTG+hDZ };
+    }
 
-/* ———— 渲染 ———— */
-function renderPerson(prefix,P){
-  const stems=[P.stems[0],P.stems[1],P.stems[2],P.stems[3]||null];
-  const zhis=[P.zhis[0],P.zhis[1],P.zhis[2],P.zhis[3]||null];
-  const sw=strongWeakAndYong(stems, zhis);
-  P.sw=sw;
+    function analyzePersonal() {
+      let year = parseInt(document.getElementById("pYear").value);
+      let month = parseInt(document.getElementById("pMonth").value);
+      let day = parseInt(document.getElementById("pDay").value);
+      let hour = parseInt(document.getElementById("pHour").value);
+      let gender = document.getElementById("pGender").value;
+      let city = document.getElementById("pCity").value;
+      let solar = document.getElementById("pSolar").value;
 
-  const kpi=document.getElementById('kpi'+prefix); kpi.innerHTML='';
-  [['四柱',`${stems.map((g,i)=>(g||'—')+(zhis[i]?zhis[i]:'')).join(' ')}`],
-   ['日主',`${sw.dayGan}（${sw.dayMaster}）`],
-   ['强弱',`${sw.strongWeak}（通根${sw.root.toFixed(2)}）`],
-   ['喜用',[...sw.yongSet].join('、')||'—'],
-   ['忌神',[...sw.jiSet].join('、')||'—'],
-  ].forEach(([k,v])=>{
-    const d=document.createElement('div'); d.className='kpi'; d.innerHTML=`<h3>${k}</h3><div>${v}</div>`; kpi.appendChild(d);
-  });
+      let bazi = getBazi(year, month, day, hour);
 
-  const tgYear = tenGod(sw.dayGan, stems[0]);
-  const tgMonth= tenGod(sw.dayGan, stems[1]);
-  const tgTime = tenGod(sw.dayGan, stems[3]);
+      let result = `<h3>八字排盘结果</h3>`;
+      result += `公历 ${year}年${month}月${day}日 ${hour}时<br>`;
+      result += `性别：${gender} 出生地：${city||"未知"} 真太阳时：${solar}<br><br>`;
+      result += `<b>年柱：</b>${bazi.year} <b>月柱：</b>${bazi.month} <b>日柱：</b>${bazi.day} <b>时柱：</b>${bazi.hour}<br><br>`;
 
-  const lines=[];
-  lines.push(`${P.gender}｜${P.city||'未知城市'}｜真太阳时：${P.ts}｜输入：${P.mode==='gz'?'干支':'公历→自动排盘'}`);
-  if(P.birth){ lines.push(`出生公历：${P.birth.y}-${String(P.birth.m).padStart(2,'0')}-${String(P.birth.d).padStart(2,'0')} ${String(P.birth.h).padStart(2,'0')}:00`); }
-  lines.push(`四柱：${stems.map((g,i)=>(g||'')+(zhis[i]||'')).join(' ')}`);
-  const wc=sw.wc; lines.push(`十神（日主相对）：年干${tgYear}，月干${tgMonth}，时干${tgTime||'—'}`);
-  lines.push(`五行统计（干1.0 + 藏干权重 + 月令0.5）：木${wc.木.toFixed(1)} 火${wc.火.toFixed(1)} 土${wc.土.toFixed(1)} 金${wc.金.toFixed(1)} 水${wc.水.toFixed(1)}`);
-  document.getElementById('txt'+prefix).textContent=lines.join('\n');
-}
-function renderCompat(kind,A,B,calc){
-  const kpiC=document.getElementById('kpiC'); kpiC.innerHTML='';
-  const bothYong=[...new Set([...A.sw.yongSet].filter(x=>B.sw.yongSet.has(x)))];
-  const bothJi=[...new Set([...A.sw.jiSet].filter(x=>B.sw.jiSet.has(x)))];
-  [['总评分',`${calc.score}/100`],
-   ['A日主',`${A.sw.dayGan}（${A.sw.dayMaster}；${A.sw.strongWeak}）`],
-   ['B日主',`${B.sw.dayGan}（${B.sw.dayMaster}；${B.sw.strongWeak}）`],
-   ['共同喜用',bothYong.join('、')||'—'],
-   ['共同忌神',bothJi.join('、')||'—'],
-   ['合/冲权重',`干合${calc.it.ganHe} 支合${calc.it.zhiHe}｜干冲${calc.it.ganChong} 支冲${calc.it.zhiChong}`],
-  ].forEach(([k,v])=>{ const d=document.createElement('div'); d.className='kpi'; d.innerHTML=`<h3>${k}</h3><div>${v}</div>`; kpiC.appendChild(d); });
+      // 简单五行分布模拟
+      let wuXing = {木:0,火:0,土:0,金:0,水:0};
+      for(let k of Object.values(bazi)){
+        if("甲乙寅卯".includes(k[0])||"寅卯".includes(k[1])) wuXing["木"]++;
+        if("丙丁巳午".includes(k[0])||"巳午".includes(k[1])) wuXing["火"]++;
+        if("戊己辰戌丑未".includes(k[0])||"辰戌丑未".includes(k[1])) wuXing["土"]++;
+        if("庚辛申酉".includes(k[0])||"申酉".includes(k[1])) wuXing["金"]++;
+        if("壬癸子亥".includes(k[0])||"子亥".includes(k[1])) wuXing["水"]++;
+      }
+      result += `<h3>五行分布</h3>`;
+      for(let w in wuXing){
+        let val = wuXing[w];
+        if(val===0) result += `<span class="highlight-red">${w}:${val}（缺失）</span> `;
+        else if(val>=2) result += `<span class="highlight-green">${w}:${val}（旺）</span> `;
+        else result += `${w}:${val} `;
+      }
 
-  const txt=[];
-  txt.push(`核心依据：日主关系、四柱合/冲、刑/害/破、喜用互补/忌神互踩、三合/三会助力、职能互补。`);
-  calc.reasons.filter(Boolean).forEach((r,i)=>txt.push(`${i+1}. ${r}`));
-  txt.push('');
-  txt.push(`A 喜用：${[...A.sw.yongSet].join('、')}；忌神：${[...A.sw.jiSet].join('、')}`);
-  txt.push(`B 喜用：${[...B.sw.yongSet].join('、')}；忌神：${[...B.sw.jiSet].join('、')}`);
-  document.getElementById('txtExplain').textContent=txt.join('\n');
+      result += `<h3>喜用神建议</h3>`;
+      result += `（简化示例）根据五行缺失或过旺，推测适合补充或克制的元素；缺木→宜接触木元素行业（教育、文化），缺火→科技、互联网；缺土→地产、管理；缺金→金融、法律；缺水→交通、旅游。<br>`;
 
-  const tBody=document.getElementById('tabXHP'); tBody.innerHTML='';
-  const Ares=analyzeXHP_San(A.zhis), Bres=analyzeXHP_San(B.zhis), Mres=analyzeXHP_San([...A.zhis,...B.zhis]);
-  [['A',Ares],['B',Bres],['合盘',Mres]].forEach(([lab,res])=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${lab}</td><td>${res.xing}</td><td>${res.hai}</td><td>${res.po}</td><td>${res.sanhe}</td><td>${res.sanhui}</td><td>${res.explain}</td>`;
-    tBody.appendChild(tr);
-  });
-  document.getElementById('txtXhp').textContent = [
-    '名词提示：',
-    '· 刑：性格/规则对撞，易内耗；· 害：误解/小人；· 破：破坏/拆台，宜短周期试错；',
-    '· 三合/三会：同气成势，利组织协同与资源整合。'
-  ].join('\n');
+      document.getElementById("personalResult").innerHTML = result;
+    }
 
-  const advUl=document.getElementById('adviceList'); advUl.innerHTML='';
-  buildActionable(kind,A,B,calc).forEach(s=>{ const li=document.createElement('li'); li.textContent=s; advUl.appendChild(li); });
-}
+    function analyzeCompatibility() {
+      let aYear = parseInt(document.getElementById("aYear").value);
+      let aMonth = parseInt(document.getElementById("aMonth").value);
+      let aDay = parseInt(document.getElementById("aDay").value);
+      let aHour = parseInt(document.getElementById("aHour").value);
 
-/* ———— 建议生成 ———— */
-function pick(arr){ return arr && arr.length ? arr[0] : null; }
-function buildActionable(kind,A,B,calc){
-  const list=[];
-  const bothYong=[...new Set([...A.sw.yongSet].filter(x=>B.sw.yongSet.has(x)))];
-  const bothJi=[...new Set([...A.sw.jiSet].filter(x=>B.sw.jiSet.has(x)))];
-  const chooseElem = bothYong[0] || pick([...A.sw.yongSet]) || pick([...B.sw.yongSet]);
+      let bYear = parseInt(document.getElementById("bYear").value);
+      let bMonth = parseInt(document.getElementById("bMonth").value);
+      let bDay = parseInt(document.getElementById("bDay").value);
+      let bHour = parseInt(document.getElementById("bHour").value);
 
-  if(chooseElem){
-    const em=elementMonths[chooseElem];
-    list.push(`优先元素：${chooseElem}${bothYong[0]?'（共同喜用）':'（核心喜用）'}`);
-    if(em){ list.push(`【月份】${em.zhi.join(' / ')}（阳历 ${em.greg}）重点推进。`); list.push(`【行业】${em.jobs.join('、')} 优先。`); }
-  }
-  if(bothJi[0]){
-    const em=elementMonths[bothJi[0]];
-    list.push(`规避元素：${bothJi[0]}（共同忌神）。`);
-    if(em){ list.push(`【避月】${em.zhi.join(' / ')} 做试点不做终局；【避业】${em.jobs.join('、')} 谨慎或隔离。`); }
-  }
-  const ax=calc.ax;
-  if(ax.xing>0) list.push('有“刑”：固定化SOP + 双复核 + 例外审批；刑月不做不可逆决策。');
-  if(ax.hai>0) list.push('有“害”：设置信息隔离/冲突披露；害月重书面与留痕，减少误解与小人。');
-  if(ax.po>0)  list.push('有“破”：采用A/B与短冲刺；破月不签长期不可解约合同。');
+      let aBazi = getBazi(aYear, aMonth, aDay, aHour);
+      let bBazi = getBazi(bYear, bMonth, bDay, bHour);
 
-  const elemFromTxt = (txt)=>{ const m=txt.match(/（(.+?)，/); return m?m[1]:null; };
-  const eSH = elemFromTxt(ax.sanhe) || elemFromTxt(ax.sanhui);
-  if(eSH && elementMonths[eSH]){
-    const em=elementMonths[eSH];
-    list.push(`三合/三会助力偏向“${eSH}”，在 ${em.zhi.join(' / ')}（阳历 ${em.greg}）安排关键节点。`);
-    list.push(`资源对接：${em.jobs.slice(0,4).join('、')} 方向。`);
-  }
-  const Sa=A.sw.wc, Sb=B.sw.wc;
-  const A_cre=(Sa.木+Sa.火)>(Sa.土+Sa.金+Sa.水), B_cre=(Sb.木+Sb.火)>(Sb.土+Sb.金+Sb.水);
-  if(kind==='career'){
-    if(A_cre!==B_cre) list.push('分工：一方主“外”（产品/增长/BD/品牌），一方主“内”（交付/风控/法务/财控）；KPI分离、权责对等。');
-    else list.push('分工：能力重叠，采用“赛道分治/区域分账”，减少内耗。');
-  }else{
-    const dA=A.dayGan, dB=B.dayGan;
-    if(ganChong[dA]===dB) list.push('沟通：设置“情绪暂停”暗号+24小时冷静期；重要议题使用书面共识清单。');
-    if(ganHe[dA]===dB)   list.push('默契：每周一次固定“共同项目”（课程/旅行/家庭项目），放大合的能量。');
-  }
-  if(chooseElem && elementMonths[chooseElem]){
-    const em=elementMonths[chooseElem];
-    list.push(`总体择期：以“${chooseElem}”为主轴，在 ${em.zhi.join(' / ')}（阳历 ${em.greg}）推进最关键事项。`);
-  }
-  return list;
-}
+      let result = `<h3>合盘结果</h3>`;
+      result += `甲方八字：${aBazi.year} ${aBazi.month} ${aBazi.day} ${aBazi.hour}<br>`;
+      result += `乙方八字：${bBazi.year} ${bBazi.month} ${bBazi.day} ${bBazi.hour}<br><br>`;
 
-/* ———— 60 年扫描 ———— */
-function gzToWuXing(gz){
-  if(!gz||gz.length<2) return null;
-  const g=gz[0], z=gz[1]; // “甲子”
-  return wuxingGan[g] || wuxingZhi[z] || null;
-}
-function buildScan(A,B){
-  const tbody=document.getElementById('scanBody'); tbody.innerHTML='';
-  if(!(A && B && A.birth && B.birth)){
-    const tr=document.createElement('tr'); tr.innerHTML='<td colspan="6">请在“公历自动排盘”模式下分别为 A 和 B 填写公历出生信息，并各自点击“运行：生成四柱摘要”。</td>'; tbody.appendChild(tr); return;
-  }
-  const bothYong=[...new Set([...A.sw.yongSet].filter(x=>B.sw.yongSet.has(x)))];
-  const bothJi=[...new Set([...A.sw.jiSet].filter(x=>B.sw.jiSet.has(x)))];
-  const { Solar } = window.Lunar;
+      result += `<h3>相合/相冲分析</h3>`;
+      result += `（示例逻辑）检查天干地支：若有冲（子午、卯酉等）则<span class="highlight-orange">提醒注意</span>，若有合（六合、三合局）则<span class="highlight-green">助力加分</span>。<br><br>`;
+      result += `<h3>破解与落地建议</h3>`;
+      result += `如果存在冲克，可通过选择合适的行业、颜色、月份来中和。例：火过旺→宜从事水相关行业，减少矛盾。<br>`;
 
-  // 以 A 的生日为基准扫描（也可改成双方各自扫描）
-  for(let age=1; age<=60; age++){
-    const y=A.birth.y+age, m=A.birth.m, d=A.birth.d;
-    const solar=Solar.fromYmdHms(y,m,d,A.birth.h||0,0,0);
-    const lunar=solar.getLunar();
-    const Y=lunar.getYearInGanZhi();
-    const wu=gzToWuXing(Y);
-    let tag='', explain='';
-    if(bothYong.includes(wu)){ tag='偏有利'; explain=`与双方共同喜用“${wu}”同气，宜推进关键事项`; }
-    if(bothJi.includes(wu)){ tag='需谨慎'; explain=`与双方共同忌神“${wu}”同气，宜保守控节奏`; }
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${age}</td><td>${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}</td><td>${Y}</td><td>${wu||'—'}</td><td>${tag||'—'}</td><td>${explain||''}</td>`;
-    tbody.appendChild(tr);
-  }
-}
-
-/* ———— 事件绑定 ———— */
-let A=null,B=null;
-document.getElementById('btnA').addEventListener('click', ()=>{
-  const P=collect('A'); if(!P) return; renderPerson('A',P); A=P;
-});
-document.getElementById('btnB').addEventListener('click', ()=>{
-  const P=collect('B'); if(!P) return; renderPerson('B',P); B=P;
-});
-document.getElementById('btnCareer').addEventListener('click', ()=>{
-  if(!A){ const P=collect('A'); if(!P) return; renderPerson('A',P); A=P; }
-  if(!B){ const P=collect('B'); if(!P) return; renderPerson('B',P); B=P; }
-  const calc=scoreCareer(A,B); renderCompat('career',A,B,calc);
-});
-document.getElementById('btnMarriage').addEventListener('click', ()=>{
-  if(!A){ const P=collect('A'); if(!P) return; renderPerson('A',P); A=P; }
-  if(!B){ const P=collect('B'); if(!P) return; renderPerson('B',P); B=P; }
-  const calc=scoreMarriage(A,B); renderCompat('marriage',A,B,calc);
-});
-document.getElementById('btnDemo').addEventListener('click', ()=>{
-  // 切到公历模式演示自动排盘
-  document.getElementById('mode').value='greg';
-  ['A','B'].forEach(p=>{
-    document.getElementById(p+'_gz').classList.add('hidden');
-    document.getElementById(p+'_greg').classList.remove('hidden');
-  });
-  // 示例公历
-  document.getElementById('A_gender').value='男';
-  document.getElementById('A_city').value='北京';
-  document.getElementById('A_true').value='否';
-  document.getElementById('A_gy').value=1990; document.getElementById('A_gm').value=2; document.getElementById('A_gd').value=18; document.getElementById('A_gh').value=9;
-
-  document.getElementById('B_gender').value='女';
-  document.getElementById('B_city').value='上海';
-  document.getElementById('B_true').value='是';
-  document.getElementById('B_gy').value=1992; document.getElementById('B_gm').value=8; document.getElementById('B_gd').value=3; document.getElementById('B_gh').value=21;
-
-  document.getElementById('btnA').click();
-  document.getElementById('btnB').click();
-  document.getElementById('btnMarriage').click();
-});
-document.getElementById('btnScan').addEventListener('click', ()=>{
-  if(!A||!B){ alert('请先为 A、B 生成四柱摘要'); return; }
-  if(!(A.birth && B.birth)){ alert('60 年扫描需使用“公历自动排盘”模式为 A、B 生成四柱摘要'); return; }
-  buildScan(A,B);
-});
-</script>
+      document.getElementById("compatibilityResult").innerHTML = result;
+    }
+  </script>
 </body>
 </html>
