@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>八字排盘与出生后60年运势</title>
+  <style>
+    body { font-family: "Noto Sans SC", system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; padding:24px; color:#1f2937; }
+    h1 { margin:0 0 12px 0; font-size:24px; text-align:center; }
+    .status { font-weight:600; margin: 8px 0 16px 0; text-align:center; }
+    .green { color:#16a34a; } .red { color:#ef4444; } .orange { color:#f59e0b; }
+    .card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 6px 24px rgba(17,24,39,.06); margin-top:16px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .row input[type="number"] { width:90px; }
+    .btn { padding:10px 14px; border:none; border-radius:10px; cursor:pointer; font-weight:600; }
+    .btn-primary { background:#22c55e; color:#fff; }
+    .btn-secondary { background:#3b82f6; color:#fff; }
+    .btn-test { background:#f59e0b; color:#fff; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th, td { border-bottom:1px solid #e5e7eb; padding:10px 8px; text-align:left; }
+    th { background:#f9fafb; position:sticky; top:0; z-index:1; }
+    .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-right:6px; margin-bottom:4px; border:1px solid rgba(31,41,55,.12); }
+    .tag-red { color:#ef4444; border-color:#fecaca; background:#fff1f2; }
+    .tag-green { color:#16a34a; border-color:#bbf7d0; background:#f0fdf4; }
+    .tag-amber { color:#b45309; border-color:#fde68a; background:#fffbeb; }
+    .muted { color:#6b7280; font-size:13px; }
+    .grid { display:grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap:8px; }
+    .kpi { background:#0b1020; color:#fff; border-radius:12px; padding:12px; }
+    .kpi h3 { margin:0 0 6px 0; font-size:13px; opacity:.8; font-weight:500; }
+    .kpi div { font-size:18px; font-weight:700; }
+    .scroll { max-height:60vh; overflow:auto; border-radius:12px; }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0b1020; color:#cbd5e1; padding:10px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <h1>八字排盘与出生后60年运势</h1>
+  <div id="engineStatus" class="status">排盘引擎：lunar-javascript（加载中…）</div>
+
+  <div class="card">
+    <div class="row">
+      <label>出生日期时间：</label>
+      <input type="number" id="year" placeholder="年" />
+      <input type="number" id="month" placeholder="月" />
+      <input type="number" id="day" placeholder="日" />
+      <input type="number" id="hour" placeholder="时" />
+      <button class="btn btn-primary" id="btnBazi">生成八字分析</button>
+      <button class="btn btn-secondary" id="btnLuck">生成出生后60年运势</button>
+      <button class="btn btn-test" id="btnTest">运行内建测试</button>
+    </div>
+    <div class="muted" style="margin-top:6px">提示：小时未知可填 12；如遇网络波动导致脚本未加载，请刷新页面。</div>
+  </div>
+
+  <div class="card" id="panelBazi" style="display:none">
+    <h2>📜 八字四柱</h2>
+    <div class="grid" id="kpi"></div>
+    <pre class="code" id="baziText"></pre>
+  </div>
+
+  <div class="card" id="panelLuck" style="display:none">
+    <h2>📈 出生后 60 年运势时间轴</h2>
+    <div class="muted" id="luckHint" style="margin-bottom:8px">标记规则：<span class="tag tag-red">重大转折</span> 四正地支（子午卯酉）；<span class="tag tag-green">贵人</span> 年干与日干相合；<span class="tag tag-amber">小人</span> 年干与日干相冲；另有 <span class="tag">本命年</span>/<span class="tag">冲太岁</span>/<span class="tag">合太岁</span>。</div>
+    <div class="scroll">
+      <table id="luckTable">
+        <thead>
+          <tr>
+            <th>序</th>
+            <th>年份</th>
+            <th>年干支</th>
+            <th>生肖</th>
+            <th>标记</th>
+            <th>提示</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- lunar-javascript：UMD，全局提供 Solar/Lunar -->
+  <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+  <script>
+    // —— 引擎状态 —— //
+    window.addEventListener('load', () => {
+      const st = document.getElementById('engineStatus');
+      if (window.Solar && window.Lunar) { st.textContent = '排盘引擎：lunar-javascript（已就绪）'; st.classList.add('green'); }
+      else { st.textContent = '排盘引擎：lunar-javascript（加载失败）'; st.classList.add('red'); }
+      console.log('Solar', window.Solar, 'Lunar', window.Lunar);
+    });
+
+    // —— 工具表 —— //
+    const clashSX = { 鼠:'马', 牛:'羊', 虎:'猴', 兔:'鸡', 龙:'狗', 蛇:'猪', 马:'鼠', 羊:'牛', 猴:'虎', 鸡:'兔', 狗:'龙', 猪:'蛇' };
+    const heSX = { 鼠:'牛', 牛:'鼠', 虎:'猪', 猪:'虎', 兔:'狗', 狗:'兔', 龙:'鸡', 鸡:'龙', 蛇:'猴', 猴:'蛇', 马:'羊', 羊:'马' };
+    const fourZheng = new Set(['子','午','卯','酉']); // 四正地支
+    const ganHe = { 甲:'己', 乙:'庚', 丙:'辛', 丁:'壬', 戊:'癸', 己:'甲', 庚:'乙', 辛:'丙', 壬:'丁', 癸:'戊' };
+    const ganChong = { 甲:'庚', 乙:'辛', 丙:'壬', 丁:'癸', 戊:'甲', 己:'乙', 庚:'甲', 辛:'乙', 壬:'丙', 癸:'丁' };
+
+    function ensureInputs() {
+      const y = parseInt(document.getElementById('year').value, 10);
+      const m = parseInt(document.getElementById('month').value, 10);
+      const d = parseInt(document.getElementById('day').value, 10);
+      const h = parseInt(document.getElementById('hour').value, 10);
+      if (!y || !m || !d || isNaN(h)) { alert('请输入完整的 年 / 月 / 日 / 时'); return null; }
+      if (!window.Solar || !window.Lunar) { alert('排盘引擎未加载成功，请检查网络或脚本地址。'); return null; }
+      return { y, m, d, h };
+    }
+
+    // —— 八字分析 —— //
+    function generateBazi() {
+      const inps = ensureInputs(); if (!inps) return;
+      const { y, m, d, h } = inps;
+      const solar = Solar.fromYmdHms(y, m, d, h, 0, 0);
+      const lunar = solar.getLunar();
+      const ec = lunar.getEightChar();
+
+      const lines = [];
+      lines.push(`公历：${y}-${m}-${d} ${String(h).padStart(2,'0')}:00`);
+      lines.push(`农历：${lunar.toFullString()}`);
+      lines.push(`八字：${ec.toString()}`);
+      lines.push(`四柱：年 ${ec.getYear()}｜月 ${ec.getMonth()}｜日 ${ec.getDay()}｜时 ${ec.getTime()}`);
+      lines.push(`日主（日干）：${ec.getDayGan()}`);
+
+      document.getElementById('baziText').textContent = lines.join('\n');
+      document.getElementById('panelBazi').style.display = 'block';
+
+      // 小KPI：生肖、日干、年支、时区（显示信息而已）
+      const kpi = document.getElementById('kpi');
+      kpi.innerHTML = '';
+      const kpis = [
+        ['生肖', lunar.getYearShengXiao()],
+        ['日干', ec.getDayGan()],
+        ['年支', ec.getYearZhi()],
+        ['年干', ec.getYearGan()],
+      ];
+      kpis.forEach(([k, v]) => {
+        const el = document.createElement('div'); el.className = 'kpi';
+        el.innerHTML = `<h3>${k}</h3><div>${v}</div>`;
+        kpi.appendChild(el);
+      });
+    }
+
+    // —— 60年时间轴 —— //
+    function generateLuck60() {
+      const inps = ensureInputs(); if (!inps) return;
+      const { y, m, d, h } = inps;
+
+      // 基准八字（用于取日干、生肖基准等）
+      const baseSolar = Solar.fromYmdHms(y, m, d, h, 0, 0);
+      const baseLunar = baseSolar.getLunar();
+      const baseEC = baseLunar.getEightChar();
+      const dayGan = baseEC.getDayGan();
+      const myAnimal = baseLunar.getYearShengXiao();
+
+      const tbody = document.querySelector('#luckTable tbody');
+      tbody.innerHTML = '';
+      let bestYears = []; // 收集“有利/需防”的摘要（可扩展）
+
+      for (let i = 0; i < 60; i++) {
+        const Y = y + i;
+        const sol = Solar.fromYmdHms(Y, m, d, h, 0, 0);
+        const lun = sol.getLunar();
+        const gz = lun.getYearInGanZhi();    // 年干支（例如：甲子）
+        const gan = gz.charAt(0);            // 天干
+        const zhi = gz.charAt(1);            // 地支
+        const animal = lun.getYearShengXiao();
+
+        // 标记（本命年/冲太岁/合太岁）
+        const tags = [];
+        if (animal === myAnimal) tags.push('<span class="tag">本命年</span>');
+        if (clashSX[myAnimal] === animal) tags.push('<span class="tag">冲太岁</span>');
+        if (heSX[myAnimal] === animal) tags.push('<span class="tag">合太岁</span>');
+
+        // 重大转折（四正）
+        const marks = [];
+        if (fourZheng.has(zhi)) marks.push('<span class="tag tag-red">重大转折</span>');
+
+        // 贵人/小人：年干与日干
+        const hints = [];
+        if (ganHe[dayGan] === gan) { marks.push('<span class="tag tag-green">贵人</span>'); hints.push('贵人相助，利协作/资源'); }
+        if (ganChong[dayGan] === gan) { marks.push('<span class="tag tag-amber">小人</span>'); hints.push('人际掣肘，宜稳重处事'); }
+
+        // 轻量提示（四域随机模板，可替换为更精细算法）
+        const suggest = domainHints(Y, animal, {gan, zhi});
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${Y}${(new Date().getFullYear()===Y)?'（今年）':''}</td>
+          <td>${gz}</td>
+          <td>${animal}</td>
+          <td>${[...tags, ...marks].join(' ')}</td>
+          <td>${[...hints, suggest].join('；')}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById('panelLuck').style.display = 'block';
+    }
+
+    // —— 简化的领域提示（可替换成基于十神/喜忌的权重） —— //
+    function domainHints(year, animal, {gan, zhi}) {
+      // 基于“冲合/四正/干相合/相冲”给出一句合成提示
+      const parts = [];
+      if (fourZheng.has(zhi)) parts.push('节点年：适合定大方向/搬迁/转型');
+      if (/午|巳/.test(zhi)) parts.push('事业热度上升，注意节奏与耐心');
+      if (/子|亥/.test(zhi)) parts.push('人脉/学习提升，利考证与复盘');
+      if (ganHe[gan]) {} // 仅占位，避免 ESLint 报未用
+      // 简短四域拼句（演示）
+      const pool = [
+        '感情：沟通为先，宜主动创造相处机会',
+        '财运：现金流优先，谨慎杠杆',
+        '事业：明确目标，利项目推进与背书',
+        '家庭：多陪伴与倾听，协调作息'
+      ];
+      // 随机抽两条，保证每行不冗长
+      for (let i = 0; i < 2; i++) {
+        const pick = pool.splice(Math.floor(Math.random()*pool.length), 1)[0];
+        parts.push(pick);
+      }
+      return parts.join('；');
+    }
+
+    // —— 内建测试 —— //
+    function runTests() {
+      const st = document.getElementById('engineStatus');
+      st.textContent = '排盘引擎：lunar-javascript（测试中…）'; st.classList.remove('green','red'); st.classList.add('orange');
+      const out = [];
+      try {
+        if (!window.Solar || !window.Lunar) throw new Error('引擎未加载');
+        out.push('✅ 引擎全局对象存在');
+        const s1 = Solar.fromYmd(1990,1,1);
+        const l1 = s1.getLunar();
+        out.push('✅ 1990-01-01 转农历：' + l1.toFullString());
+        const ec = l1.getEightChar();
+        out.push('✅ 四柱可得：' + [ec.getYear(), ec.getMonth(), ec.getDay(), ec.getTime()].join(' '));
+        const s2 = Solar.fromYmdHms(2000,5,20,14,0,0);
+        out.push('✅ fromYmdHms 正常：' + s2.toString());
+        st.textContent = '排盘引擎：lunar-javascript（已就绪）'; st.classList.remove('orange'); st.classList.add('green');
+      } catch(e) {
+        out.push('❌ 测试失败：' + e.message);
+        st.textContent = '排盘引擎：lunar-javascript（加载失败）'; st.classList.remove('orange'); st.classList.add('red');
+      }
+      // 把测试结果显示在八字面板
+      const box = document.getElementById('panelBazi'); box.style.display = 'block';
+      document.getElementById('baziText').textContent = out.join('\n');
+      document.getElementById('kpi').innerHTML = '';
+    }
+
+    // —— 绑定按钮 —— //
+    document.getElementById('btnBazi').addEventListener('click', generateBazi);
+    document.getElementById('btnLuck').addEventListener('click', generateLuck60);
+    document.getElementById('btnTest').addEventListener('click', runTests);
+  </script>
+</body>
+</html>
