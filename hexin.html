@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<title>双路径人格映射（优化版：动态权重/非线性/多场景/盲点）</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#222; --muted:#666; --line:#e5e7eb;
+    --primary:#4f46e5; --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
+    --cyan:#06b6d4; --vio:#8b5cf6; --pink:#ec4899;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter, "Noto Sans SC", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;}
+  .app{display:grid;grid-template-columns:360px 1fr 360px;grid-template-rows:auto 1fr;gap:12px; height:100vh;}
+  header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);}
+  header h1{font-size:18px;margin:0;font-weight:700;}
+  header .scene{display:flex;gap:8px;}
+  header .scene button{padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}
+  header .scene button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .left, .right{overflow:auto;padding:8px 12px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:12px;background:#fff}
+  .card h3{margin:0 0 8px 0;font-size:14px}
+  .row{display:grid;grid-template-columns:120px 1fr 48px;align-items:center;gap:8px;margin:8px 0}
+  .row input[type="range"]{width:100%}
+  .row .val{font-variant-numeric:tabular-nums;text-align:right}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .select{width:100%;padding:6px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .hint{color:var(--muted);font-size:12px;margin-top:6px}
+  .blind{border-left:4px solid var(--warn);padding-left:8px}
+  .good{color:var(--good)} .bad{color:var(--bad)} .muted{color:var(--muted)}
+  svg{width:100%;height:calc(100vh - 64px)}
+  .label{font-size:11px;fill:#222;text-anchor:middle;pointer-events:none}
+  .small{font-size:10px;fill:#555}
+  .ring text{user-select:none}
+  .bar{height:16px;background:#f3f4f6;border-radius:8px;overflow:hidden}
+  .bar > div{height:100%;background:var(--primary)}
+  .grid{display:grid;grid-template-columns:1fr;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>双路径人格映射（优化版）</h1>
+    <div class="scene" id="sceneTabs">
+      <button data-scene="work" class="active">工作</button>
+      <button data-scene="intimacy">亲密</button>
+      <button data-scene="crisis">危机</button>
+      <button data-scene="solo">独处</button>
+    </div>
+  </header>
+
+  <!-- 左侧：输入层（先天/后天） -->
+  <div class="left">
+    <div class="card">
+      <h3>先天：大五（模拟 40 题结果）</h3>
+      <div id="big5"></div>
+      <div class="hint">实际可由 40 题量表得分喂入；此处滑杆仅为演示。</div>
+    </div>
+
+    <div class="card">
+      <h3>后天偏好（MBTI 维度化）</h3>
+      <div id="mbti"></div>
+      <div class="hint">用于影响“环境适应力 A”的子维度：场景切换/不确定性容忍等。</div>
+    </div>
+
+    <div class="card">
+      <h3>关键事件 / 能量消耗</h3>
+      <div id="events"></div>
+      <div class="hint">强化“潜在熵增 R”：情绪失衡、关系断裂、拖延/中断、冲突、能量耗散模式。</div>
+    </div>
+
+    <div class="card">
+      <h3>职业烙印（行业 + 职位）</h3>
+      <div class="pair">
+        <select id="industry" class="select">
+          <option value="tech">科技互联网</option>
+          <option value="finance">金融投资</option>
+          <option value="health">医疗健康</option>
+          <option value="edu">教育培训</option>
+          <option value="gov">政府公共</option>
+          <option value="mfg">制造工程</option>
+          <option value="art">艺术文化</option>
+          <option value="ngo">公益NGO</option>
+        </select>
+        <select id="role" class="select">
+          <option value="manager">管理岗</option>
+          <option value="expert">专业技术</option>
+          <option value="creative">创意岗位</option>
+          <option value="service">服务岗位</option>
+          <option value="ops">执行/运营</option>
+          <option value="sales">销售/市场</option>
+        </select>
+      </div>
+      <div class="hint">用于差异化影响 A/O（适应/优化）以及场景加权。</div>
+    </div>
+
+    <div class="card">
+      <h3>时间分配（每周比重）</h3>
+      <div id="time"></div>
+      <div class="hint">影响恢复力、适应度与能量模式（A 与 R）。</div>
+    </div>
+
+    <div class="card">
+      <h3>自我印象（用于盲点报告）</h3>
+      <div id="selfView"></div>
+      <div class="hint">与测评分数对比，识别“自我报告偏差”。</div>
+    </div>
+  </div>
+
+  <!-- 中间：可视化 -->
+  <div>
+    <svg id="viz" viewBox="0 0 1200 1200"></svg>
+  </div>
+
+  <!-- 右侧：潜力/盲点 -->
+  <div class="right">
+    <div class="card">
+      <h3>发展潜力（非线性加权）</h3>
+      <div id="potential" class="grid"></div>
+      <div class="hint">采用 sigmoid 曲线与场景加权；受结构 +（A−R+O）综合影响。</div>
+    </div>
+
+    <div class="card">
+      <h3>盲点报告</h3>
+      <div id="blind" class="blind small"></div>
+      <div class="hint">对比“测评结果 vs 自我印象/职业烙印/时间分配”，给出校准建议。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/** ===================== 基础数据 ===================== **/
+const structures = ["镜面（觉察）","筋骨（控制）","水流（灵活）","火焰（驱力）","指南针（价值）","盾牌（情绪）","桥梁（人际）","岩石（意志）"];
+const ecology16 = [
+  "信任建立","合作倾向","依赖程度","独立程度","冲突处理","表达清晰","共情能力","关系稳定",
+  "创造力","执行力","适应力","风险感知","学习节奏","情绪感染","领导气场","幸福感"
+];
+const potentials = ["创新潜力","领导潜力","艺术潜力","学习潜力","社交潜力","创业潜力","科研潜力","幸福潜力"];
+const scenes = ["work","intimacy","crisis","solo"];
+
+/** ===================== UI 构建：输入控件 ===================== **/
+const $ = sel => document.querySelector(sel);
+const containerBig5 = $("#big5");
+const containerMbti = $("#mbti");
+const containerEvents = $("#events");
+const containerTime = $("#time");
+const containerSelf = $("#selfView");
+
+function sliderRow(parent, label, min=0, max=100, val=50, key, store){
+  const row = document.createElement("div"); row.className="row";
+  const lab = document.createElement("div"); lab.textContent=label;
+  const range = document.createElement("input"); range.type="range"; range.min=min; range.max=max; range.value=val;
+  const valBox = document.createElement("div"); valBox.className="val"; valBox.textContent=val;
+  range.addEventListener("input", ()=>{ valBox.textContent=range.value; store[key]=+range.value; computeAndRender(); });
+  row.appendChild(lab); row.appendChild(range); row.appendChild(valBox); parent.appendChild(row);
+}
+
+const state = {
+  scene:"work",
+  // 先天：大五
+  big5:{外向:55, 宜人:60, 尽责:65, 神经质:45, 开放:70},
+  // 后天：MBTI 两极偏好（0-100，越大越靠前）
+  mbti:{EvsI:60, SvsN:40, TvsF:55, JvsP:50},
+  // 关键事件/能量消耗（影响 R）
+  events:{情绪失衡:30, 关系断裂:25, 拖延中断:40, 冲突频率:20, 能量消耗:35},
+  // 职业烙印
+  job:{industry:"tech", role:"manager"},
+  // 时间分配（0-100，归一化用于 A 与 R）
+  time:{工作:50, 家庭:20, 学习:15, 运动:10, 社交:5},
+  // 自我印象（用于盲点）
+  self:{自评外向:70, 自评稳定:70, 自评创造:80}
+};
+
+// 大五
+[
+  ["外向", state.big5.外向], ["宜人", state.big5.宜人],
+  ["尽责", state.big5.尽责], ["神经质", state.big5.神经质],
+  ["开放", state.big5.开放]
+].forEach(([k,v])=> sliderRow(containerBig5, k, 0,100,v,k,state.big5));
+
+// MBTI
+[
+  ["E ↔ I（外向↔内向）", state.mbti.EvsI, "EvsI"],
+  ["S ↔ N（感觉↔直觉）", state.mbti.SvsN, "SvsN"],
+  ["T ↔ F（思维↔情感）", state.mbti.TvsF, "TvsF"],
+  ["J ↔ P（判断↔感知）", state.mbti.JvsP, "JvsP"],
+].forEach(([lab,v,key])=> sliderRow(containerMbti, lab,0,100,v,key,state.mbti));
+
+// 事件
+[
+  ["情绪失衡", state.events.情绪失衡, "情绪失衡"],
+  ["关系断裂", state.events.关系断裂, "关系断裂"],
+  ["拖延/中断", state.events.拖延中断, "拖延中断"],
+  ["冲突频率", state.events.冲突频率, "冲突频率"],
+  ["能量消耗", state.events.能量消耗, "能量消耗"],
+].forEach(([lab,v,key])=> sliderRow(containerEvents, lab,0,100,v,key,state.events));
+
+// 时间
+[
+  ["工作", state.time.工作, "工作"],
+  ["家庭", state.time.家庭, "家庭"],
+  ["学习", state.time.学习, "学习"],
+  ["运动", state.time.运动, "运动"],
+  ["社交", state.time.社交, "社交"],
+].forEach(([lab,v,key])=> sliderRow(containerTime, lab,0,100,v,key,state.time));
+
+// 自我印象
+[
+  ["自评外向", state.self.自评外向, "自评外向"],
+  ["自评稳定", state.self.自评稳定, "自评稳定"],
+  ["自评创造", state.self.自评创造, "自评创造"],
+].forEach(([lab,v,key])=> sliderRow(containerSelf, lab,0,100,v,key,state.self));
+
+// 职业烙印选择
+$("#industry").addEventListener("change",(e)=>{ state.job.industry=e.target.value; computeAndRender(); });
+$("#role").addEventListener("change",(e)=>{ state.job.role=e.target.value; computeAndRender(); });
+
+// 场景 tabs
+document.querySelectorAll("#sceneTabs button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll("#sceneTabs button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.scene = btn.dataset.scene;
+    computeAndRender();
+  });
+});
+
+/** ===================== 计算：映射函数 ===================== **/
+// 1) 先天：大五 -> 结构（8）
+function mapBig5ToStructure(b){
+  // 基于你之前的意向配比，做可解释的线性映射（0-100）
+  const s = new Array(8).fill(0);
+  // 0 镜面（觉察）：外向正向、开放正向
+  s[0] = clamp( 0.5*b.外向 + 0.5*b.开放 );
+  // 1 筋骨（控制）：尽责为主，外向少量
+  s[1] = clamp( 0.75*b.尽责 + 0.25*b.外向 );
+  // 2 水流（灵活）：开放为主，JvsP 越偏 P 越灵活（后天微调在 A/O）
+  s[2] = clamp( 0.8*b.开放 + 0.2*(100 - b.尽责) );
+  // 3 火焰（驱力）：外向+开放，神经质过高时略减
+  s[3] = clamp( 0.6*b.外向 + 0.4*b.开放 - 0.2*b.神经质 );
+  // 4 指南针（价值）：宜人为主，尽责少量
+  s[4] = clamp( 0.7*b.宜人 + 0.3*b.尽责 );
+  // 5 盾牌（情绪）：宜人正向，神经质反向
+  s[5] = clamp( 0.7*b.宜人 + 0.3*(100 - b.神经质) );
+  // 6 桥梁（人际）：外向+宜人
+  s[6] = clamp( 0.6*b.外向 + 0.4*b.宜人 );
+  // 7 岩石（意志）：尽责为主，神经质略减
+  s[7] = clamp( 0.8*b.尽责 - 0.2*b.神经质 + 0.2*b.开放 );
+  return s;
+}
+
+// 2) 后天：形成修正层 A/R/O 基础分
+function computeA(state){ // 环境适应力
+  // MBTI：EvsI(切换)、SvsN(认知迁移)、JvsP(流程↔灵活)、TvsF(人际切换)
+  const m = state.mbti;
+  const time = state.time;
+  const timeBal = balanceScore(Object.values(time)); // 分配均衡度
+  // 行业/职位对 A 的倾斜（快节奏行业与管理/创意岗位增强 A 的重要性）
+  const indBoost = ({tech:10, finance:8, health:4, edu:5, gov:3, mfg:5, art:8, ngo:5})[state.job.industry] || 0;
+  const roleBoost = ({manager:8, expert:5, creative:7, service:4, ops:3, sales:6})[state.job.role] || 0;
+  const base = avg([
+    m.EvsI, 100 - Math.abs(50 - m.JvsP)*2, // 越接近 P 更灵活，但不要极端，将极端拉回
+    100 - Math.abs(50 - m.SvsN)*2,         // 对不同认知风格的包容
+    timeBal
+  ]);
+  return clamp( base + indBoost + roleBoost, 0, 100 );
+}
+
+function computeR(state){ // 潜在熵增
+  const e = state.events;
+  // 能量消耗：结合时间分配不均衡与事件负担
+  const timeImbal = 100 - balanceScore(Object.values(state.time));
+  // 快速行业 + 创意/销售岗位提升 R（波动更大）
+  const indRisk = ({tech:10, finance:9, health:8, edu:4, gov:3, mfg:5, art:10, ngo:5})[state.job.industry] || 0;
+  const roleRisk = ({manager:7, expert:4, creative:8, service:5, ops:4, sales:7})[state.job.role] || 0;
+
+  const base = weightedAvg(
+    [e.情绪失衡, e.关系断裂, e.拖延中断, e.冲突频率, e.能量消耗, timeImbal],
+    [0.25,     0.20,      0.18,       0.15,     0.12,    0.10]
+  );
+  return clamp( base + indRisk + roleRisk, 0, 100 );
+}
+
+function computeO(state){ // 优化策略执行力（可动能）
+  // 由尽责性、岩石/筋骨潜在、以及“学习/运动/社交”的时间所占与均衡性来推
+  const learn = state.time.学习, sport = state.time.运动, social = state.time.社交;
+  const practice = avg([learn, sport, social]);
+  // 职位：管理/专家提升 O 的可落地性；创意/销售对 O 的需求强，也给予加成
+  const rolePlus = ({manager:8, expert:7, creative:6, service:5, ops:6, sales:6})[state.job.role] || 0;
+  // MBTI：J 倾向更利于执行（高 J 提升 O）
+  const jFactor = state.mbti.JvsP; // 越大越 J
+  return clamp( 0.5*practice + 0.3*jFactor + rolePlus + 10, 0, 100 );
+}
+
+// 3) 动态权重：结构驱动 A/R/O 的影响力
+function dynamicWeights(structArr){
+  // 基础：α(结构) β(修正)；修正再分到 A/R/O
+  // 根据结构强弱微调：镜面强 → 降低 R 权重；火焰强 → 提升 O 权重；
+  // 盾牌强 → 降低 R；岩石/筋骨强 → 提升 A 与 O 的可用度
+  const s = normalize(structArr); // 0-1
+  let wStruct = 0.55, wAdjust = 0.45;
+  const mirror = s[0], fire = s[3], shield = s[5], bones = s[1], rock = s[7];
+
+  // 让结构越稳，结构权重略升（最多 +0.05）
+  wStruct += (avg([mirror, shield, rock, bones]) - 0.5) * 0.1;
+  wStruct = clamp(wStruct, 0.5, 0.6);
+  wAdjust = 1 - wStruct;
+
+  // A/R/O 内部分配
+  let wA = 0.34, wR = 0.33, wO = 0.33;
+  wR -= (mirror*0.08 + shield*0.08); // 觉察与情稳降低风险影响权
+  wO += (fire*0.08 + rock*0.05 + bones*0.05); // 驱力/意志/控制提升优化的杠杆
+  // 保持非负与归一
+  const sum = Math.max(0,wA) + Math.max(0,wR) + Math.max(0,wO);
+  wA = Math.max(0,wA)/sum; wR = Math.max(0,wR)/sum; wO = Math.max(0,wO)/sum;
+
+  return { wStruct, wAdjust, wA, wR, wO };
+}
+
+// 4) 结构 + 修正 → 生态（16），采用场景权重 + 非线性
+function computeEcology(structArr, A, R, O, weights, scene, job){
+  // 基础由结构线性组成 + 修正项，[A − R + O]
+  // 场景权重：不同场景下某些生态更重要
+  const sceneMap = {
+    work:   [1,1,0.6,1,1,1,0.8,1, 1,1,1,1,1,0.8,1,0.8],
+    intimacy:[1,0.8,1,0.7,0.9,1,1,1, 0.7,0.7,0.8,0.8,0.8,1,0.8,1],
+    crisis: [0.8,0.7,0.8,1,1,0.8,0.7,0.9, 0.9,1,0.8,1,0.8,1,1,0.7],
+    solo:   [0.8,0.6,0.5,1,0.8,1,0.7,0.9, 1,1,1,0.9,1,0.8,0.7,1]
+  }[scene];
+
+  // 职业加权：行业/职位对若干外显的加成
+  const jobBoost = new Array(16).fill(0);
+  if(job.industry==="tech"){ jobBoost[8]+=6; jobBoost[10]+=4; jobBoost[11]+=2; }          // 创造力/适应/风险
+  if(job.industry==="finance"){ jobBoost[11]+=6; jobBoost[9]+=4; jobBoost[3]+=2; }       // 风险/执行/独立
+  if(job.industry==="health"){ jobBoost[6]+=6; jobBoost[15]+=4; jobBoost[4]+=2; }        // 共情/幸福/冲突
+  if(job.industry==="edu"){ jobBoost[6]+=5; jobBoost[12]+=4; jobBoost[5]+=2; }           // 共情/学习/表达
+  if(job.industry==="gov"){ jobBoost[7]+=6; jobBoost[9]+=2; }                             // 关系稳定/执行
+  if(job.industry==="mfg"){ jobBoost[9]+=6; jobBoost[3]+=3; jobBoost[12]+=2; }           // 执行/独立/学习
+  if(job.industry==="art"){ jobBoost[8]+=8; jobBoost[13]+=4; jobBoost[10]+=2; }          // 创造/感染/适应
+  if(job.industry==="ngo"){ jobBoost[1]+=5; jobBoost[6]+=4; jobBoost[0]+=2; }            // 合作/共情/信任
+
+  if(job.role==="manager"){ jobBoost[15]+=4; jobBoost[14]+=6; jobBoost[9]+=3; }          // 幸福/领导/执行
+  if(job.role==="expert"){ jobBoost[12]+=5; jobBoost[11]+=4; jobBoost[9]+=3; }           // 学习/风险/执行
+  if(job.role==="creative"){ jobBoost[8]+=6; jobBoost[5]+=2; jobBoost[10]+=3; }          // 创造/表达/适应
+  if(job.role==="service"){ jobBoost[6]+=6; jobBoost[0]+=3; jobBoost[1]+=3; }            // 共情/信任/合作
+  if(job.role==="ops"){ jobBoost[9]+=5; jobBoost[3]+=3; jobBoost[7]+=2; }                // 执行/独立/稳定
+  if(job.role==="sales"){ jobBoost[0]+=4; jobBoost[13]+=4; jobBoost[1]+=3; }             // 信任/感染/合作
+
+  // 结构 → 生态的主导矩阵（简单可解释映射）
+  const S = structArr; // 0..100
+  const base = [
+    // 信任建立
+    0.55*S[6] + 0.25*S[0] + 0.2*S[4],
+    // 合作倾向
+    0.5*S[6] + 0.3*S[4] + 0.2*S[5],
+    // 依赖程度（依赖高并非坏，按“可被依赖/需要依赖”的中性定义，此处用价值+人际）
+    0.35*S[4] + 0.35*S[6] + 0.3*(100 - S[3]),
+    // 独立程度
+    0.5*S[7] + 0.3*S[1] + 0.2*S[3],
+    // 冲突处理
+    0.45*S[5] + 0.35*S[4] + 0.2*S[0],
+    // 表达清晰
+    0.4*S[0] + 0.35*S[6] + 0.25*S[1],
+    // 共情能力
+    0.6*S[6] + 0.3*S[5] + 0.1*S[4],
+    // 关系稳定
+    0.5*S[5] + 0.3*S[7] + 0.2*S[4],
+    // 创造力
+    0.55*S[2] + 0.3*S[3] + 0.15*S[0],
+    // 执行力
+    0.55*S[1] + 0.3*S[7] + 0.15*S[3],
+    // 适应力
+    0.6*S[2] + 0.25*S[0] + 0.15*S[6],
+    // 风险感知
+    0.5*S[1] + 0.3*S[7] + 0.2*S[5],
+    // 学习节奏
+    0.45*S[7] + 0.35*S[1] + 0.2*S[0],
+    // 情绪感染
+    0.5*S[3] + 0.3*S[0] + 0.2*S[6],
+    // 领导气场
+    0.45*S[3] + 0.3*S[7] + 0.25*S[6],
+    // 幸福感
+    0.5*S[5] + 0.3*S[4] + 0.2*S[0]
+  ];
+
+  // 修正项：非线性（sigmoid），并做场景 & 职业加成
+  const adj = weights.wAdjust * (
+    weights.wA * A/100  -  weights.wR * R/100  +  weights.wO * O/100
+  );
+  const result = base.map((b,i)=>{
+    const sceneW = sceneMap[i];
+    const jb = jobBoost[i] || 0;
+    // 结构部分也作为非线性输入：sigmoid( (α*结构 + β*修正) / 100 )
+    const x = weights.wStruct*(b/100) + adj;
+    const y = 100*sigmoid( (x*2-1) * 2.2 ); // 放大斜率
+    return clamp( y * sceneW + jb, 0, 100 );
+  });
+  return result;
+}
+
+// 5) 生态 → 潜力（8），非线性 + O/R 加成
+function computePotential(ec, O, R){
+  // 对应关系（可调整权重）
+  const pick = idxs => idxs.map(i=>ec[i]);
+  return [
+    // 创新：创造(8), 适应(10), 表达(5), 学习(12)
+    sigmoidMix(avg(pick([8,10,5,12])) + 0.3*O - 0.1*R),
+    // 领导：领导(14), 执行(9), 冲突(4), 信任(0)
+    sigmoidMix(avg(pick([14,9,4,0])) + 0.25*O - 0.1*R),
+    // 艺术：创造(8), 表达(5), 情绪感染(13)
+    sigmoidMix(avg(pick([8,5,13])) + 0.25*O),
+    // 学习：学习(12), 执行(9), 表达(5)
+    sigmoidMix(avg(pick([12,9,5])) + 0.2*O),
+    // 社交：信任(0), 合作(1), 共情(6), 情绪感染(13)
+    sigmoidMix(avg(pick([0,1,6,13])) + 0.2*O - 0.1*R),
+    // 创业：独立(3), 执行(9), 风险感知(11), 领导(14)
+    sigmoidMix(avg(pick([3,9,11,14])) + 0.25*O - 0.1*R),
+    // 科研：学习(12), 风险(11), 执行(9), 独立(3)
+    sigmoidMix(avg(pick([12,11,9,3])) + 0.2*O),
+    // 幸福：幸福(15), 关系稳定(7), 情绪稳定相关（冲突5 反向）
+    sigmoidMix(avg(pick([15,7])) + 0.2*O - 0.1*R)
+  ].map(v=>clamp(v,0,100));
+}
+
+/** ===================== 可视化 ===================== **/
+const svg = d3.select("#viz");
+const W=1200,H=1200, cx=W/2, cy=H/2;
+
+const g = svg.append("g").attr("transform",`translate(${cx},${cy})`);
+const ringStruct = g.append("g").attr("class","ring struct");
+const ringAdjust = g.append("g").attr("class","ring adjust");
+const ringEcology = g.append("g").attr("class","ring ecology");
+const legend = g.append("g").attr("class","legend").attr("transform","translate(-520,-520)");
+
+// 圈半径
+const rStruct=180, rAdjust=320, rEcology=480, thick=60;
+
+// 结构（8）小扇形
+const arcS = d3.arc().innerRadius(rStruct).outerRadius(rStruct+thick);
+ringStruct.selectAll("path")
+  .data(structures).enter().append("path")
+  .attr("fill","#eef2ff").attr("stroke","#c7d2fe")
+  .attr("d",(d,i)=>arcS.startAngle(2*Math.PI*i/8).endAngle(2*Math.PI*(i+1)/8)());
+
+ringStruct.selectAll("text")
+  .data(structures).enter().append("text")
+  .attr("class","label")
+  .attr("transform",(d,i)=>{
+    const a = (i+0.5)*2*Math.PI/8, r=rStruct+thick/2;
+    return `translate(${Math.cos(a)*r},${Math.sin(a)*r})`;
+  })
+  .text(d=>d);
+
+// 修正层（A/R/O 三段环）
+const arcA = d3.arc().innerRadius(rAdjust).outerRadius(rAdjust+thick);
+const adjustData = ["环境适应力 A","潜在熵增 R","优化策略 O"];
+ringAdjust.selectAll("path")
+  .data(adjustData).enter().append("path")
+  .attr("fill",(d,i)=> i===0?"#d1fae5": i===1?"#fee2e2":"#e0e7ff")
+  .attr("stroke","#e5e7eb")
+  .attr("d",(d,i)=>arcA.startAngle(2*Math.PI*i/3).endAngle(2*Math.PI*(i+1)/3)());
+
+ringAdjust.selectAll("text")
+  .data(adjustData).enter().append("text")
+  .attr("class","label")
+  .attr("transform",(d,i)=>{
+    const a = (i+0.5)*2*Math.PI/3, r=rAdjust+thick/2;
+    return `translate(${Math.cos(a)*r},${Math.sin(a)*r})`;
+  })
+  .text(d=>d);
+
+// 生态（16）
+const arcE = d3.arc().innerRadius(rEcology).outerRadius(rEcology+thick);
+ringEcology.selectAll("path.bg")
+  .data(ecology16).enter().append("path")
+  .attr("class","bg")
+  .attr("fill","#fff7ed").attr("stroke","#fed7aa")
+  .attr("d",(d,i)=>arcE.startAngle(2*Math.PI*i/16).endAngle(2*Math.PI*(i+1)/16)());
+
+const fg = ringEcology.selectAll("path.fg")
+  .data(ecology16).enter().append("path")
+  .attr("class","fg")
+  .attr("fill","#fdba74").attr("stroke","#fb923c");
+
+const ecText = ringEcology.selectAll("text")
+  .data(ecology16).enter().append("text")
+  .attr("class","label small")
+  .attr("transform",(d,i)=>{
+    const a = (i+0.5)*2*Math.PI/16, r=rEcology+thick/2;
+    return `translate(${Math.cos(a)*r},${Math.sin(a)*r})`;
+  })
+  .text(d=>d);
+
+// 图例：动态数值
+const legendItems = [
+  {k:"结构权重 α", id:"wStruct"},
+  {k:"修正权重 β", id:"wAdjust"},
+  {k:"A 权重", id:"wA"},
+  {k:"R 权重", id:"wR"},
+  {k:"O 权重", id:"wO"},
+  {k:"场景", id:"scene"}
+];
+legend.selectAll("text")
+  .data(legendItems).enter().append("text")
+  .attr("class","small")
+  .attr("y",(d,i)=>i*16)
+  .text(d=>`${d.k}: `);
+
+legend.selectAll("text.val")
+  .data(legendItems).enter().append("text")
+  .attr("class","small")
+  .attr("x",120)
+  .attr("y",(d,i)=>i*16)
+  .attr("id",d=>`val_${d.id}`)
+  .text("—");
+
+// 渲染潜力条
+function renderPotentialBars(vals){
+  const wrap = document.getElementById("potential");
+  wrap.innerHTML="";
+  vals.forEach((v,i)=>{
+    const row = document.createElement("div");
+    const title = document.createElement("div");
+    title.textContent = `${potentials[i]}  ${v.toFixed(0)}%`;
+    title.style.fontSize="12px"; title.style.marginBottom="4px";
+    const bar = document.createElement("div"); bar.className="bar";
+    const fill = document.createElement("div");
+    fill.style.width = `${v}%`;
+    fill.style.background = v>70?"var(--good)":v>40?"var(--primary)":"var(--warn)";
+    bar.appendChild(fill);
+    row.appendChild(title); row.appendChild(bar);
+    wrap.appendChild(row);
+  });
+}
+
+// 盲点报告
+function renderBlind(structArr, ecoArr){
+  const box = document.getElementById("blind");
+  box.innerHTML="";
+  const issues = [];
+
+  // 外向盲点：测评外向 vs 自评外向
+  const testExtrav = state.big5.外向;
+  const selfExtrav = state.self.自评外向;
+  if(Math.abs(testExtrav - selfExtrav) >= 20){
+    issues.push(`外向性自评与测评差异较大（自评 ${selfExtrav} vs 测评 ${testExtrav}）。建议回看：是否出于职业/情境补偿。`);
+  }
+  // 情绪稳定盲点：盾牌 vs 自评稳定
+  const shield = structArr[5];
+  const selfStable = state.self.自评稳定;
+  if(Math.abs(shield - selfStable) >= 20){
+    issues.push(`情绪稳定的自我印象与结构不一致（自评 ${selfStable} vs 结构 ${shield.toFixed(0)}）。可加入恢复策略：睡眠/运动/表达。`);
+  }
+  // 创造盲点：水流/火焰 vs 自评创造
+  const creativeStruct = (structArr[2] + structArr[3])/2;
+  const selfCreative = state.self.自评创造;
+  if(Math.abs(creativeStruct - selfCreative) >= 20){
+    issues.push(`创造力自我印象与结构存在偏差（自评 ${selfCreative} vs 结构 ${creativeStruct.toFixed(0)}）。建议设定小规模试错清单。`);
+  }
+  // 行业-生态偏差：若当前行业加权显著提升某外显（如创造/风险），而结构不足，提示补课
+  const industry = state.job.industry;
+  if(industry==="tech" && (structArr[2]<50 || structArr[3]<50)){
+    issues.push(`科技行业要求高“灵活/驱力”，但你的结构在该项偏弱（<50）。可通过项目冲刺/短迭代训练弥补。`);
+  }
+  if(industry==="finance" && (structArr[1]<55 || structArr[7]<55)){
+    issues.push(`金融行业要求强“控制/意志”，当前结构偏弱。建议引入流程化工具与目标-复盘机制。`);
+  }
+
+  if(issues.length===0){
+    box.innerHTML = `<div class="good">未发现明显盲点。保持良好节奏，并定期复盘关键事件即可。</div>`;
+  }else{
+    box.innerHTML = issues.map(s=>`<div style="margin:6px 0">${s}</div>`).join("");
+  }
+}
+
+/** ===================== 工具函数 ===================== **/
+function clamp(v, lo=0, hi=100){ return Math.max(lo, Math.min(hi, v)); }
+function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function weightedAvg(vals, ws){
+  const s = vals.reduce((acc,v,i)=>acc+v*(ws[i]||1),0);
+  const w = ws.reduce((a,b)=>a+b,0);
+  return s/w;
+}
+function normalize(arr){ // 0..100 -> 0..1
+  const m = 100; return arr.map(v=>clamp(v,0,100)/m);
+}
+function sigmoid(x){ return 1/(1+Math.exp(-x)); }
+function sigmoidMix(x){ // 输入大致 0..100
+  const z = (x-50)/15; // 中心 50，斜率
+  return 100*sigmoid(z);
+}
+function balanceScore(values){
+  // 越均衡越高，简单用标准差的反比
+  const s = avg(values);
+  const variance = avg(values.map(v=>(v-s)*(v-s)));
+  const std = Math.sqrt(variance);
+  const scaled = clamp(100 - std*2, 0, 100);
+  return scaled;
+}
+
+/** ===================== 渲染主流程 ===================== **/
+function computeAndRender(){
+  // 先天 → 结构
+  const struct = mapBig5ToStructure(state.big5);
+
+  // 后天 → A/R/O
+  const A = computeA(state);
+  const R = computeR(state);
+  const O = computeO(state);
+
+  // 动态权重
+  const W = dynamicWeights(struct);
+
+  // 结构 + 修正 → 生态（按场景 & 职业）
+  const eco = computeEcology(struct, A, R, O, W, state.scene, state.job);
+
+  // 生态 → 潜力（非线性）
+  const pot = computePotential(eco, O/100, R/100);
+
+  // ====== 可视化更新 ======
+  // 修正层：在三段环上画“填充长度”
+  const adjVals = [A, R, O]; // 0..100
+  ringAdjust.selectAll("path.fill").remove();
+  ringAdjust.selectAll("path.fill")
+    .data(adjVals).enter().append("path")
+    .attr("class","fill")
+    .attr("fill",(d,i)=> i===0?"#34d399": i===1?"#fca5a5":"#93c5fd")
+    .attr("d",(d,i)=>{
+      const start = 2*Math.PI*i/3;
+      const span = (2*Math.PI/3) * (d/100);
+      return arcA.startAngle(start).endAngle(start+span)();
+    });
+
+  // 生态：每段进度
+  ringEcology.selectAll("path.fg")
+    .attr("d",(d,i)=>{
+      const start = 2*Math.PI*i/16;
+      const end   = 2*Math.PI*(i+1)/16;
+      const span  = (end-start) * (eco[i]/100);
+      return arcE.startAngle(start).endAngle(start+span)();
+    });
+
+  // 结构：用颜色深浅映射
+  ringStruct.selectAll("path")
+    .attr("fill",(d,i)=>{
+      const t = struct[i]/100;
+      const c = d3.interpolateRgb("#eef2ff","#6366f1")(0.35+0.5*t);
+      return c;
+    });
+
+  // 图例
+  d3.select("#val_wStruct").text(W.wStruct.toFixed(2));
+  d3.select("#val_wAdjust").text(W.wAdjust.toFixed(2));
+  d3.select("#val_wA").text(W.wA.toFixed(2));
+  d3.select("#val_wR").text(W.wR.toFixed(2));
+  d3.select("#val_wO").text(W.wO.toFixed(2));
+  d3.select("#val_scene").text(sceneName(state.scene));
+
+  // 潜力条形图
+  renderPotentialBars(pot);
+
+  // 盲点
+  renderBlind(struct, eco);
+}
+
+function sceneName(k){
+  return {work:"工作", intimacy:"亲密", crisis:"危机", solo:"独处"}[k] || k;
+}
+
+// 初次计算 & 渲染
+computeAndRender();
+</script>
+</body>
+</html>
