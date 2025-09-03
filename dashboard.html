@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard · 三圈雷达 + 右侧条形对比（含 Step3 纠偏）</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#0b1020;--card:#121833;--ink:#e7ecff;--muted:#98a1c0;--brand:#6c8cff;--line:#1c2447}
+*{box-sizing:border-box}html,body{margin:0;background:linear-gradient(180deg,#0b1020,#0e1430);color:var(--ink);font-family:'Noto Sans SC',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:1200px;margin:22px auto 80px;padding:14px}
+.h1{font-size:26px;font-weight:700;margin:6px 0 12px}
+.card{background:linear-gradient(180deg,#121833,#0f1733);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.row{display:grid;grid-template-columns: 1.2fr 1fr;gap:14px;align-items:start}
+.btn{padding:8px 14px;border-radius:8px;background:#6c8cff;color:#fff;margin-right:6px;text-decoration:none;border:1px solid #7a95ff;cursor:pointer}
+.tab{display:inline-block;padding:6px 10px;border:1px solid #2a3b7a;border-radius:10px;margin-right:6px;cursor:pointer}.tab.active{background:#1a244f;border-color:#5a76dd}
+.q{padding:10px;border:1px dashed #2a3b7a;border-radius:12px;background:#0c1433;margin:8px 0}
+.bar{position:relative;height:12px;width:100%;background:#0b1230;border:1px solid #2a3b7a;border-radius:999px;overflow:hidden;margin:6px 0 4px 0}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#6c8cff,#9aaeff)}
+.bar.alt1>i{background:linear-gradient(90deg,#10b981,#34d399)}
+.bar.alt2>i{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.value{font-size:12px;color:#b9c4ff;display:block;text-align:right;margin-bottom:4px}
+.legend-note{font-size:12px;color:#9fb1ff;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="h1">Dashboard · 三圈雷达（左） + 条形对比（右）</div>
+  <div class="row">
+    <div class="card">
+      <canvas id="radar" height="520"></canvas>
+      <div style="margin-top:10px">
+        <a class="btn" href="step1.html">Step1</a>
+        <a class="btn" href="step2.html">Step2</a>
+        <a class="btn" href="step3.html">Step3</a>
+        <a class="btn" href="report.html">Report</a>
+        <span class="legend-note">内圈0–50=结构，中圈50–100=生态，外圈100–150=潜力（点击图例可显隐）</span>
+      </div>
+    </div>
+    <div class="card">
+      <div style="margin-bottom:8px">
+        <span class="tab active" id="tab-struct">结构 8</span>
+        <span class="tab" id="tab-eco">生态 16</span>
+        <span class="tab" id="tab-pot">潜力 8</span>
+      </div>
+      <div id="panel-struct"><div id="structList"></div></div>
+      <div id="panel-eco" style="display:none"><div id="ecoList"></div></div>
+      <div id="panel-pot" style="display:none"><div id="potList"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AXES = ["指南针（方向）", "盾牌（情绪稳定）", "镜面（觉察）", "筋骨（闭环力）", "岩石（韧性）", "火焰（能量）", "水流（灵活）", "桥梁（连接）"];
+const ECO16 = ["信任速度", "协作质量", "关系韧性", "影响半径", "目标推进力", "节奏管理", "应变效率", "落地闭环度", "洞察敏锐度", "表达条理度", "信息整合度", "改进驱动力", "能量外放", "冲突风格", "环境贴合度", "幸福感基础"];
+const ECO16_TO_AXIS = {"信任速度": 7, "协作质量": 7, "关系韧性": 4, "影响半径": 5, "目标推进力": 3, "节奏管理": 4, "应变效率": 6, "落地闭环度": 3, "洞察敏锐度": 2, "表达条理度": 2, "信息整合度": 2, "改进驱动力": 6, "能量外放": 5, "冲突风格": 1, "环境贴合度": 6, "幸福感基础": 4};
+const POT_DEFS = [{"name": "创新潜力", "struct": [[2, 0.4], [3, 0.2]], "eco": [[8, 0.2]], "corr": [["opt", 0.2]]}, {"name": "领导潜力", "struct": [[3, 0.3], [6, 0.2], [7, 0.2]], "eco": [[13, 0.2]], "corr": [["ent", -0.1]]}, {"name": "艺术潜力", "struct": [[2, 0.3], [4, 0.1]], "eco": [[8, 0.35], [13, 0.25]], "corr": []}, {"name": "学习潜力", "struct": [[0, 0.25], [7, 0.25]], "eco": [[5, 0.2], [12, 0.3]], "corr": [["env", 0.05]]}, {"name": "社交潜力", "struct": [[5, 0.15], [6, 0.3]], "eco": [[0, 0.2], [1, 0.2], [6, 0.15]], "corr": []}, {"name": "创业潜力", "struct": [[3, 0.35], [1, 0.25], [7, 0.2]], "eco": [[3, 0.1], [9, 0.1]], "corr": [["ent", -0.1]]}, {"name": "科研潜力", "struct": [[1, 0.25], [7, 0.25], [4, 0.15]], "eco": [[11, 0.15], [12, 0.2]], "corr": []}, {"name": "幸福潜力", "struct": [[0, 0.15], [4, 0.2], [5, 0.25]], "eco": [[7, 0.2], [1, 0.1], [15, 0.1]], "corr": [["opt", 0.05]]}];
+
+function readArr(key, n){ try{ const v=JSON.parse(localStorage.getItem(key)||'null'); if(Array.isArray(v) && (n==null || v.length===n)) return v; }catch(e){} return null; }
+function sample(n,seed){ let x=seed, arr=[]; for(let i=0;i<n;i++){ x=(x*9301+49297)%233280; arr.push((x/233280)*100); } return arr; }
+function ecology16FromStruct(S){ const v=i=>S[i]; return [
+  (v(7)+v(1))/2,(v(7)+v(3)+v(0))/3,(v(1)+v(4)+v(6))/3,(v(5)+v(7)+v(0))/3,
+  (v(3)+v(0)+v(4))/3,(v(4)+v(6)+v(3))/3,(v(6)+v(2))/2,(v(3)+v(1))/2,
+  (v(2)+v(6))/2,(v(3)+v(2))/2,(v(2)+v(3)+v(0))/3,(v(2)+v(6))/2,
+  (v(5)+v(7))/2,(v(5)+v(1)+v(2))/3,(v(6)+v(7)+v(1))/3,(v(4)+v(1)+v(0))/3
+]; }
+function expand8to16(arr8){ return ECO16.map(name => arr8[ECO16_TO_AXIS[name]] || 0); }
+
+const s_self = readArr('step1_struct',8) || sample(8,11);
+const e16_self = readArr('step1_eco16',16) || ecology16FromStruct(s_self);
+
+const s_tag = readArr('tag60_struct',8) || sample(8,37);
+const e16_tag = readArr('tag60_eco',8) ? expand8to16(readArr('tag60_eco',8)) : ecology16FromStruct(s_tag);
+
+const s_fix = readArr('step3_struct',8) || sample(8,73);
+const e16_fix = readArr('step3_eco16',16) || ecology16FromStruct(s_fix);
+
+function potentialsFor(s8, e16){
+  const opt = e16[11] || 0;
+  const env = e16[14] || 0;
+  const sel = new Set(JSON.parse(localStorage.getItem('step2_selected')||'[]'));
+  const entIDs = new Set(['T020','T042','T068','T182']);
+  let entCount=0; entIDs.forEach(id=>{ if(sel.has(id)) entCount++; });
+  const ent = (entCount / entIDs.size) * 100;
+  const E8 = (function(){
+    const s=Array(8).fill(0),c=Array(8).fill(0);
+    ECO16.forEach((name,i)=>{ const a=ECO16_TO_AXIS[name]; s[a]+=e16[i]; c[a]++; });
+    return s.map((v,i)=> c[i]?v/c[i]:0);
+  })();
+  function valByDef(def){
+    let v=0;
+    (def.struct||[]).forEach(([i,w])=> v += (s8[i]||0)*w );
+    (def.eco||[]).forEach(([i,w])=> v += (E8[i]||0)*w );
+    (def.corr||[]).forEach(([k,w])=>{ if(k==='opt') v+=opt*w; if(k==='env') v+=env*w; if(k==='ent') v+=ent*w; });
+    return v;
+  }
+  return POT_DEFS.map(def=> valByDef(def));
+}
+const pot_self = potentialsFor(s_self, e16_self);
+const pot_tag  = potentialsFor(s_tag,  e16_tag);
+const pot_fix  = potentialsFor(s_fix,  e16_fix);
+
+const toStructRing = v => v*0.5;
+const toEcoRing    = v => 50 + v*0.5;
+const toPotRing    = v => 100 + v*0.5;
+
+const datasets = [
+  {label:'结构 自评(80)', data: expand8to16(s_self).map(toStructRing), borderWidth:2, pointRadius:2, fill:false, borderColor:'#6c8cff'},
+  {label:'生态 自评(80)', data: e16_self.map(toEcoRing),              borderWidth:2, pointRadius:2, fill:false, borderColor:'#10b981'},
+  {label:'潜力 自评(80)', data: expand8to16(pot_self).map(toPotRing),  borderWidth:2, pointRadius:2, fill:false, borderColor:'#f59e0b'},
+
+  {label:'结构 标签+60', data: expand8to16(s_tag).map(toStructRing),   borderWidth:2, pointRadius:2, fill:false, borderColor:'#9aaeff'},
+  {label:'生态 标签+60', data: e16_tag.map(toEcoRing),                 borderWidth:2, pointRadius:2, fill:false, borderColor:'#34d399'},
+  {label:'潜力 标签+60', data: expand8to16(pot_tag).map(toPotRing),    borderWidth:2, pointRadius:2, fill:false, borderColor:'#fbbf24'},
+
+  {label:'结构 纠偏(Step3)', data: expand8to16(s_fix).map(toStructRing), borderWidth:2, pointRadius:2, fill:false, borderColor:'#c084fc'},
+  {label:'生态 纠偏(Step3)', data: e16_fix.map(toEcoRing),                borderWidth:2, pointRadius:2, fill:false, borderColor:'#a78bfa'},
+  {label:'潜力 纠偏(Step3)', data: expand8to16(pot_fix).map(toPotRing),  borderWidth:2, pointRadius:2, fill:false, borderColor:'#f472b6'},
+];
+
+const bands={id:'bands',beforeDraw(chart){ const r=chart.scales.r, ctx=chart.ctx, cx=r.xCenter, cy=r.yCenter;
+  function ring(a,b,color){ctx.save();ctx.beginPath();ctx.arc(cx,cy,r.getDistanceFromCenterForValue(b),0,Math.PI*2);ctx.arc(cx,cy,r.getDistanceFromCenterForValue(a),0,Math.PI*2,true);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.restore();}
+  ring(0,50,'rgba(108,140,255,0.08)'); ring(50,100,'rgba(16,185,129,0.08)'); ring(100,150,'rgba(245,158,11,0.08)');
+}};
+
+const ctx=document.getElementById('radar').getContext('2d');
+new Chart(ctx,{ type:'radar', data:{ labels:ECO16, datasets }, options:{
+  responsive:true, plugins:{ legend:{position:'top',labels:{color:'#cdd6ff',usePointStyle:true}} },
+  scales:{ r:{min:0,max:150,ticks:{color:'#93a1e8'},grid:{color:'rgba(255,255,255,.1)'},angleLines:{color:'rgba(255,255,255,.15)'},pointLabels:{color:'#e6ebff',font:{size:12}}} },
+  elements:{ line:{ tension:.25 } }
+}}, [bands]);
+
+function barRow3(label, v1, v2, v3){
+  return `
+  <div class='q'>
+    <div style='display:flex;justify-content:space-between;align-items:center'><b>${label}</b></div>
+    <div class='bar'><i style='width:${(v1||0).toFixed(0)}%'></i></div><span class='value'>自评（80）：${(v1||0).toFixed(1)}</span>
+    <div class='bar alt1'><i style='width:${(v2||0).toFixed(0)}%'></i></div><span class='value'>标签+60：${(v2||0).toFixed(1)}</span>
+    <div class='bar alt2'><i style='width:${(v3||0).toFixed(0)}%'></i></div><span class='value'>纠偏（Step3）：${(v3||0).toFixed(1)}</span>
+  </div>`;
+}
+
+document.getElementById('structList').innerHTML = AXES.map((a,i)=> barRow3(a, s_self[i], s_tag[i], s_fix[i]) ).join('');
+
+document.getElementById('ecoList').innerHTML = ECO16.map((name,idx)=> barRow3(`${idx+1}. ${name}`, e16_self[idx], e16_tag[idx], e16_fix[idx]) ).join('');
+
+const POT_NAMES = ["创新潜力", "领导潜力", "艺术潜力", "学习潜力", "社交潜力", "创业潜力", "科研潜力", "幸福潜力"];
+document.getElementById('potList').innerHTML = POT_NAMES.map((n,i)=> barRow3(`${i}. ${n}`, pot_self[i], pot_tag[i], pot_fix[i]) ).join('');
+
+function activate(id){ ['tab-struct','tab-eco','tab-pot'].forEach(t=>document.getElementById(t).classList.remove('active'));
+  ['panel-struct','panel-eco','panel-pot'].forEach(p=>document.getElementById(p).style.display='none');
+  document.getElementById('tab-'+id).classList.add('active'); document.getElementById('panel-'+id).style.display='block';
+}
+document.getElementById('tab-struct').onclick=()=>activate('struct');
+document.getElementById('tab-eco').onclick=()=>activate('eco');
+document.getElementById('tab-pot').onclick=()=>activate('pot');
+</script>
+</body>
+</html>

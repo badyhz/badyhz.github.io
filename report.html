@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Report · 概览与导出</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1020;--card:#121833;--ink:#e7ecff;--muted:#98a1c0;--brand:#6c8cff;--line:#1c2447}
+*{box-sizing:border-box}html,body{margin:0;background:linear-gradient(180deg,#0b1020,#0e1430);color:var(--ink);font-family:'Noto Sans SC',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:1150px;margin:22px auto 80px;padding:14px}.h1{font-size:26px;font-weight:700;margin:6px 0 12px}
+.card{background:linear-gradient(180deg,#121833,#0f1733);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.btn{padding:8px 14px;border-radius:8px;background:#6c8cff;color:#fff;margin-right:6px;text-decoration:none;border:1px solid #7a95ff;cursor:pointer}
+.pill{padding:4px 10px;border:1px solid #2a3b7a;border-radius:12px;font-size:12px;color:#c9d4ff}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}.q{padding:10px;border:1px dashed #2a3b7a;border-radius:12px;background:#0c1433}
+.bar{position:relative;height:10px;width:100%;background:#0b1230;border:1px solid #2a3b7a;border-radius:999px;overflow:hidden;margin:6px 0 10px 0}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#6c8cff,#9aaeff)}
+.bar.alt>i{background:linear-gradient(90deg,#10b981,#34d399)}
+.bar .val{position:absolute;right:6px;top:-18px;font-size:11px;color:#b9c4ff}
+.tab{display:inline-block;padding:6px 10px;border:1px solid #2a3b7a;border-radius:10px;margin-right:6px;cursor:pointer}.tab.active{background:#1a244f;border-color:#5a76dd}
+.badge{display:inline-block;padding:2px 6px;border-radius:8px;border:1px solid #2a3b7a;font-size:11px;margin-left:6px;color:#a7b4ff}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.col{flex:1 1 360px;min-width:320px}
+</style></head><body><div class="wrap">
+<div class="h1">Report · 概览与导出</div>
+<div class="card" id="box"></div>
+<script>
+const AXES = ["指南针（方向）", "盾牌（情绪稳定）", "镜面（觉察）", "筋骨（闭环力）", "岩石（韧性）", "火焰（能量）", "水流（灵活）", "桥梁（连接）"];
+function rowKV(k,v){ return `<div style='display:flex;justify-content:space-between'><span>${k}</span><b>${(v||0).toFixed? v.toFixed(1):v}</b></div>`; }
+function fill(){
+  const bf=JSON.parse(localStorage.getItem('step1_bigfive')||'null');
+  const s1=JSON.parse(localStorage.getItem('step1_struct')||'[]');
+  const e1=JSON.parse(localStorage.getItem('step1_eco')||'[]');
+  const sB=JSON.parse(localStorage.getItem('tag60_struct')||'[]');
+  const eB=JSON.parse(localStorage.getItem('tag60_eco')||'[]');
+  let html='';
+  html += "<div class='q'><b>Step1 · 大五</b>"+ (bf? Object.entries(bf).map(([k,v])=>rowKV(k,v)).join(''):"<div class='muted'>暂无</div>") +"</div>";
+  html += "<div class='q'><b>Step1 · 结构/生态</b>"+ AXES.map((a,i)=> rowKV(a,(s1[i]||0)) + rowKV(a+'（生态）',(e1[i]||0)) ).join('') +"</div>";
+  html += "<div class='q'><b>标签+60 · 融合</b>"+ AXES.map((a,i)=> rowKV(a,(sB[i]||0)) + rowKV(a+'（生态）',(eB[i]||0)) ).join('') +"</div>";
+  document.getElementById('box').innerHTML=html;
+}
+fill();
+</script>
+</div></body></html>
