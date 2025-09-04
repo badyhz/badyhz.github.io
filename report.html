@@ -8,14 +8,24 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3"></script>
 <style>
   :root{
-    --bg:#0b1020; --bg2:#0e1530; --card:#0f1a3a; --muted:#99a1b3; --text:#e8ecff;
-    --primary:#7c9bff; --accent:#52e3c2; --warm:#f59f0b; --danger:#ff5c9a; --good:#4ade80;
-    --ring: rgba(124,155,255,.35); --glass: rgba(255,255,255,.06);
+    --bg:#0b1020;
+    --bg2:#0e1530;
+    --card:#0f1a3a;
+    --muted:#99a1b3;
+    --text:#e8ecff;
+    --primary:#7c9bff;
+    --accent:#52e3c2;
+    --warm:#f59f0b;
+    --danger:#ff5c9a;
+    --good:#4ade80;
+    --ring: rgba(124,155,255,.35);
+    --glass: rgba(255,255,255,.06);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0; color:var(--text); font-family:"Inter","HarmonyOS Sans","Noto Sans SC",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    margin:0; color:var(--text);
+    font-family:"Inter","HarmonyOS Sans","Noto Sans SC",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     background:
       radial-gradient(1200px 800px at -10% -10%, #1b2a6b 0%, transparent 60%),
       radial-gradient(1000px 800px at 110% 0%, #1c3d4f 0%, transparent 55%),
@@ -24,14 +34,18 @@
     background-attachment: fixed;
   }
   .container{max-width:1280px;margin:0 auto;padding:18px}
-  .heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 18px;}
+  .heading{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 18px;
+  }
   .title{
     font-size:28px;font-weight:800;letter-spacing:.3px;
     background:linear-gradient(90deg,#a0b8ff 0%,#52e3c2 40%,#f7b500 80%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     filter: drop-shadow(0 10px 30px rgba(124,155,255,.25));
   }
-  .nav{display:flex;gap:10px; z-index: 10; position: relative;}
+  .nav{
+    display:flex;gap:10px;
+   z-index: 10; position: relative; }
   .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;}
   .btn:link,.btn:visited{color:inherit;text-decoration:none}
   .btn{
@@ -40,8 +54,12 @@
     cursor:pointer; backdrop-filter: blur(8px); font-size:15px; min-height:42px;
   }
   .btn:hover{box-shadow:0 0 0 4px var(--ring) inset}
-  .btn.primary{border-color:rgba(124,155,255,.3); background:linear-gradient(180deg, rgba(124,155,255,.25), rgba(124,155,255,.06));}
+  .btn.primary{
+    border-color:rgba(124,155,255,.3);
+    background:linear-gradient(180deg, rgba(124,155,255,.25), rgba(124,155,255,.06));
+  }
 
+  /* card / glass */
   .grid{display:grid;gap:16px}
   .grid.g2{grid-template-columns:1fr 1fr}
   .grid.g3{grid-template-columns:repeat(3,1fr)}
@@ -51,7 +69,9 @@
     position:relative;overflow:hidden;border-radius:18px;padding:16px;
     background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
     border:1px solid rgba(255,255,255,.12);
-    box-shadow: 0 12px 24px rgba(0,0,0,.25), 0 1px 0 rgba(255,255,255,.06) inset;
+    box-shadow:
+      0 12px 24px rgba(0,0,0,.25),
+      0 1px 0 rgba(255,255,255,.06) inset;
   }
   .card::before{
     content:""; position:absolute; inset:-1px;
@@ -61,23 +81,42 @@
     z-index:0; pointer-events:none;
   }
   .card > *{position:relative; z-index:1}
+
   .card h3{margin:0 0 8px; font-size:16px; font-weight:700; letter-spacing:.2px}
   .sub{color:var(--muted); font-size:12px}
+
+  /* badge / chips */
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-  .chip{padding:6px 10px; border-radius:999px; font-size:12px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.12);}
+  .chip{
+    padding:6px 10px; border-radius:999px; font-size:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.12);
+  }
   .kv{display:flex;gap:14px;flex-wrap:wrap}
   .kv .k{color:var(--muted);font-size:12px}
   .kv .v{font-weight:700}
-  .compare{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-  .badge{padding:4px 8px;border-radius:10px;font-size:12px;border:1px solid rgba(255,255,255,.12); background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));}
+
+  /* compare badge */
+  .compare{
+    display:flex;gap:10px;flex-wrap:wrap;margin-top:8px
+  }
+  .badge{
+    padding:4px 8px;border-radius:10px;font-size:12px;border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  }
   .badge.good{border-color:rgba(82,227,194,.35); color:#befae7}
   .badge.warn{border-color:rgba(247,181,0,.35); color:#ffe6a1}
   .badge.bad{border-color:rgba(255,92,154,.4); color:#ffc4db}
+
+  /* canvas */
   .chart-wrap{position:relative;height:340px}
   .row-radar{display:grid;grid-template-columns:1fr 1fr; gap:16px}
   @media (max-width:1020px){ .row-radar{grid-template-columns:1fr} }
   .chart-wrap.radar{height:420px}
+
+  /* footer */
   .footer{opacity:.75; text-align:center; font-size:12px; margin:20px 0}
+
   .chart{ position:relative; height:clamp(300px,56vh,640px) }
 </style>
 </head>
@@ -119,14 +158,7 @@
       </div>
     </div>
 
-    <!-- 三环雷达：结构 / 生态 / 潜力（来自 Dashboard 合成结果） -->
-    <div class="card" style="margin-top:16px">
-      <h3>🌀 三环雷达：结构 → 生态（聚合） → 潜力（只读）</h3>
-      <div class="sub">本图直接读取 Dashboard 的合成结果：不在报告内重算，确保口径一致；生态16轴已按固定映射聚合为8维。</div>
-      <div class="chart-wrap radar"><canvas id="radarSEP"></canvas></div>
-    </div>
-
-    <!-- 两张雷达并排 -->
+    <!-- 两张雷达图并排 -->
     <div class="row-radar">
       <div class="card">
         <h3>🧭 大五人格对比雷达（自评 vs 环境）</h3>
@@ -142,68 +174,115 @@
   </div>
 
 <script>
-/** ==================== 数据读取与兜底 ==================== **/
-const LS = (k, d=null) => {
-  try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : (typeof d==="string"?d:d); }
-  catch(e){ return (typeof d==="string"?d:d); }
-};
-const L = (k, d=null) => localStorage.getItem(k) ?? d;
+/** ========= 数据获取：以 step1/step2/step3 为主，dashboard 仅用于口径对齐（不显示） ========= **/
+// 星座信息（若有）
+const zodiac = localStorage.getItem('zodiac') || "未填写";
+const zodiacElement = localStorage.getItem('zodiacElement') || "";
+const fiveElement = localStorage.getItem('fiveElement') || "";
 
-/* —— Step1 —— */
-const zodiac = L('zodiac', "未填写");
-const zodiacElement = L('zodiacElement', "") || L('step1.zodiacElement', "");
-const fiveElement   = L('fiveElement', "")   || L('step1.fiveElement', "");
-const selfBig5      = LS('step1.big5', LS('selfScores', [50,50,50,50,50]));
-const selfTemp      = LS('step1.temp', LS('temperamentSelf', {多血质:25,胆汁质:25,抑郁质:25,粘液质:25}));
+// Step1（80题）
+const step1_bf = (()=>{ try{ return JSON.parse(localStorage.getItem('step1_bigfive')||'null') }catch(e){return null} })();
+const step1_struct = (()=>{ try{ return JSON.parse(localStorage.getItem('step1_struct')||'null') }catch(e){return null} })();
+const step1_eco16 = (()=>{ try{ return JSON.parse(localStorage.getItem('step1_eco16')||'null') }catch(e){return null} })();
 
-/* —— Step2 —— */
-const envBig5_raw   = LS('step2.big5_env', LS('envScores', [50,50,50,50,50]));
-const envTemp_raw   = LS('step2.temp_env', LS('temperamentEnv', {多血质:25,胆汁质:25,抑郁质:25,粘液质:25}));
-const struct_tags   = LS('step2.struct_from_tags', Array(8).fill(50));
-const eco_tags16    = LS('step2.eco_from_tags',   Array(16).fill(50));
+// Step2（200标签，原始加总）
+const step2_struct_raw = (()=>{ try{ return JSON.parse(localStorage.getItem('step2_struct_raw')||'null') }catch(e){return null} })();
+const step2_eco16_raw  = (()=>{ try{ return JSON.parse(localStorage.getItem('step2_eco16_raw')||'null') }catch(e){return null} })();
 
-/* —— Step3 —— */
-const Wb5           = LS('step3.weights.big5', [0,0,0,0,0]);
-const Wtemp         = LS('step3.weights.temp', {多血质:0,胆汁质:0,抑郁质:0,粘液质:0});
-const reliability   = Math.max(0, Math.min(1, Number(localStorage.getItem('step3.reliability') ?? 0.7)));
-const struct_s3     = LS('step3.struct_from_step3', Array(8).fill(50));
-const eco_s3_16     = LS('step3.eco_from_step3',    Array(16).fill(50));
+// Step3（60纠偏题，给出纠偏结构/生态）
+const step3_struct = (()=>{ try{ return JSON.parse(localStorage.getItem('step3_struct')||'null') }catch(e){return null} })();
+const step3_eco16  = (()=>{ try{ return JSON.parse(localStorage.getItem('step3_eco16')||'null') }catch(e){return null} })();
 
-/* —— Dashboard 合成结果（只读） —— */
-const struct8_final = LS('dash.struct8', Array(8).fill(50));
-const eco16_final   = LS('dash.eco16',   Array(16).fill(50));
-const potential8    = LS('dash.potential8', Array(8).fill(55));
-const extremeMode   = JSON.parse(localStorage.getItem('dash.extreme') ?? 'false');
+/** ========= 兜底 ========= **/
+function arr(n, v=50){ return Array(n).fill(v) }
+const S1 = Array.isArray(step1_struct) ? step1_struct : arr(8);
+const E1_16 = Array.isArray(step1_eco16) ? step1_eco16 : arr(16);
+const S2_raw = Array.isArray(step2_struct_raw) ? step2_struct_raw : arr(8, 0); // 原始加总
+const E2_16_raw = Array.isArray(step2_eco16_raw) ? step2_eco16_raw : arr(16, 0);
+const S3 = Array.isArray(step3_struct) ? step3_struct : arr(8, 0);
+const E3_16 = Array.isArray(step3_eco16) ? step3_eco16 : arr(16, 0);
 
-/** ==================== 纠偏融合：Big5 / Temp ==================== **/
-const clamp01 = (x)=> Math.max(0, Math.min(100, x));
-const mixBig5 = (() => {
-  const out_env = [];
-  for(let i=0;i<5;i++){
-    const S = Number(selfBig5[i]||0);
-    const E0= Number(envBig5_raw[i]||0);
-    const w = Number(Wb5[i]||0);
-    const env = clamp01( (0.70+0.20*reliability)*E0 + (0.30-0.20*reliability)*S + w );
-    out_env.push(env);
-  }
-  return { self:selfBig5.map(Number), env:out_env };
-})();
+// 将 step2 原始 → “标签路径”数值口径（+60基线后 clamp）
+const S2 = S2_raw.map(v=>Math.max(0, Math.min(100, 60 + Number(v||0))));
+const E2_16 = E2_16_raw.map(v=>Math.max(0, Math.min(100, 60 + Number(v||0))));
 
-const mixTemp = (() => {
-  const keys = ["多血质","胆汁质","抑郁质","粘液质"];
-  const out = {self:[], env:[]};
-  keys.forEach(k=>{
-    const S = Number(selfTemp[k]||0);
-    const E0= Number(envTemp_raw[k]||0);
-    const w = Number(Wtemp[k]||0);
-    const env= clamp01( (0.70+0.20*reliability)*E0 + (0.30-0.20*reliability)*S + w );
-    out.self.push(S); out.env.push(env);
-  });
-  out.labels = keys;
+// 环境通路（标签+纠偏）融合：默认 0.6*标签 + 0.4*纠偏
+const alpha = 0.6;
+const S_env = S2.map((v,i)=> Math.round((alpha*v + (1-alpha)*(S3[i]||0))));
+const E_env16 = E2_16.map((v,i)=> Math.round((alpha*v + (1-alpha)*(E3_16[i]||0))));
+
+// 工具：从结构8推导生态16（用于兜底）
+function ecology16FromStruct(S){
+  const v = i => S[i];
+  return [
+    (v(7)+v(6))/2,                      // 信任速度（桥+岩）
+    (v(6)+v(3)+v(4))/3,                 // 协作质量（桥+火+针）
+    (v(5)+v(7))/2,                      // 关系韧性（盾+岩）
+    (v(5)+v(6)+v(3))/3,                 // 影响半径（盾+桥+火）
+    (v(3)+v(4)+v(1))/3,                 // 目标推进力（火+针+筋）
+    (v(1)+v(7)+v(4))/3,                 // 节奏管理（筋+岩+针）
+    (v(2)+v(6))/2,                      // 应变效率（水+桥）
+    (v(1)+v(3))/2,                      // 落地闭环度（筋+火）
+    (v(0)+v(2))/2,                      // 洞察敏锐度（镜+水）
+    (v(2)+v(3))/2,                      // 表达条理度（水+火）
+    (v(0)+v(1)+v(2))/3,                 // 信息整合度（镜+筋+水）
+    (v(2)+v(6))/2,                      // 改进驱动力（水+桥）
+    (v(3)+v(5))/2,                      // 能量外放（火+盾）
+    (v(5)+v(1)+v(2))/3,                 // 冲突风格（盾+筋+水）
+    (v(6)+v(7)+v(1))/3,                 // 环境贴合度（桥+岩+筋）
+    (v(4)+v(1)+v(0))/3                  // 幸福感基础（针+筋+镜）
+  ];
+}
+// 兜底：若自评/环境生态16缺失，用结构推导
+const E1_16_f = (E1_16 || []).some(x=>x!==0) ? E1_16 : ecology16FromStruct(S1);
+const E_env16_f = (E_env16 || []).some(x=>x!==0) ? E_env16 : ecology16FromStruct(S_env);
+
+/** ========= 结构8 → 大五（线性映射；与 Step1 的口径一致方向） ========= **/
+// 结构 8 顺序：镜面0 / 筋骨1 / 水流2 / 火焰3 / 指南针4 / 盾牌5 / 桥梁6 / 岩石7
+function big5FromStruct(S){
+  const wO = [0.40,0.05,0.15,0.10,0.20,0.00,0.05,0.05]; // 开放性：镜/水/针/火
+  const wC = [0.05,0.45,0.05,0.05,0.20,0.10,0.05,0.05]; // 尽责性：筋/针/盾/岩
+  const wE = [0.05,0.05,0.10,0.50,0.05,0.00,0.20,0.05]; // 外向性：火/桥
+  const wA = [0.10,0.05,0.40,0.10,0.10,0.05,0.15,0.05]; // 宜人性：水/桥
+  const wES= [0.05,0.10,0.05,0.00,0.05,0.45,0.05,0.25]; // 情绪稳定：盾/岩/筋
+  const dot = (a,b)=> a.reduce((s,x,i)=> s + x*(b[i]||0), 0);
+  return {
+    O: Math.round(dot(wO,S)),
+    C: Math.round(dot(wC,S)),
+    E: Math.round(dot(wE,S)),
+    A: Math.round(dot(wA,S)),
+    ES:Math.round(dot(wES,S))
+  };
+}
+
+// 自评大五（直接读取），环境大五（由标签+纠偏的结构8映射得到）
+const bf_self = step1_bf || big5FromStruct(S1); // 若没保存过 step1_bigfive，就用结构推回
+const bf_env  = big5FromStruct(S_env);
+
+/** ========= 大五 → 四液质（规范化为百分比） ========= **/
+function clamp01(x){ return Math.max(0, Math.min(100, x)); }
+function normalizePerc(obj){
+  const sum = Object.values(obj).reduce((a,b)=>a+b,0)||1;
+  const out = {}; Object.keys(obj).forEach(k=> out[k] = Math.round(obj[k]/sum*100));
   return out;
-})();
+}
+function temperamentFromBig5(bf){
+  // 以常见心理学映射为参考：
+  // 多血（Sanguine）~ 高E/高A/中O/中高ES
+  // 胆汁（Choleric）~ 高E/高C/低A/低ES
+  // 抑郁（Melancholic）~ 高C/低ES/低E/低A
+  // 粘液（Phlegmatic）~ 高A/高ES/低E/中O
+  const O=bf.O||50, C=bf.C||50, E=bf.E||50, A=bf.A||50, ES=bf.ES||50;
+  const Sanguine   = 0.45*E + 0.25*A + 0.15*O + 0.15*ES;
+  const Choleric   = 0.45*E + 0.25*C + 0.15*(100-A) + 0.15*(100-ES);
+  const Melancholic= 0.40*C + 0.30*(100-ES) + 0.20*(100-E) + 0.10*(100-A);
+  const Phlegmatic = 0.40*A + 0.30*ES + 0.20*(100-E) + 0.10*O;
+  return normalizePerc({多血质:Sanguine, 胆汁质:Choleric, 抑郁质:Melancholic, 粘液质:Phlegmatic});
+}
+const temp_self = temperamentFromBig5(bf_self);
+const temp_env  = temperamentFromBig5(bf_env);
 
-/** ==================== 星座标签库 & 五行估算 ==================== **/
+/** ========= 星座标签库 ========= **/
 const ZODIAC_TAGS = {
   "白羊座":["行动力","直率","竞争","火元素"],
   "金牛座":["稳健","感官","耐心","土元素"],
@@ -226,6 +305,10 @@ document.getElementById('zodiacFive').textContent = fiveElement || "—";
   const s=document.createElement('span'); s.className='chip'; s.textContent=t;
   document.getElementById('zodiacTags').appendChild(s);
 });
+
+/** ========= 计算五行能量（象征性，兜底） =========
+ * 基于 四象 + 五行 给一个可视化条形：火土风水四象映射为五行的象征能量。
+ */
 function buildZodiacScore(){
   const base = {火:25,土:25,风:25,水:25};
   if(zodiacElement){ base[zodiacElement] = (base[zodiacElement]||0) + 10; downOthers(base, zodiacElement, 10); }
@@ -235,155 +318,190 @@ function buildZodiacScore(){
     base[t] = (base[t]||0) + 8; downOthers(base, t, 8);
   }
   const sum = Object.values(base).reduce((a,b)=>a+b,0);
-  const out = {}; Object.keys(base).forEach(k=> out[k] = Math.round(base[k]/sum*100));
+  const out = {};
+  Object.keys(base).forEach(k=> out[k] = Math.round(base[k]/sum*100));
   return out;
   function downOthers(obj, keep, delta){
-    Object.keys(obj).filter(k=>k!==keep).forEach(k=> obj[k]-= Math.ceil(delta/3));
+    const others = Object.keys(obj).filter(k=>k!==keep);
+    others.forEach(k=> obj[k]-= Math.ceil(delta/others.length));
   }
 }
 const zodiacScores = buildZodiacScore();
 
-/** ==================== 生态16 → 生态8 聚合（兜底） ==================== **/
-function eco16to8(eco16){
-  const g = [
-    [0,1],[2,3],[4,5],[6,7],[8,9],[10,11],[12,13],[14,15]
-  ];
-  return g.map(([a,b])=> Math.round(((eco16[a]||50)+(eco16[b]||50))/2));
+/** ========= 颜色工具 ========= **/
+function barGradient(ctx, c1, c2){
+  const g = ctx.createLinearGradient(0,0,0,320);
+  g.addColorStop(0,c1); g.addColorStop(1,c2);
+  return g;
 }
-const eco8_final = eco16to8(eco16_final);
 
-/** ==================== Chart.js 主题 ==================== **/
+/** ========= Chart.js 全局样式 ========= **/
 Chart.defaults.color = "#d7defc";
 Chart.defaults.borderColor = "rgba(255,255,255,.12)";
 Chart.defaults.font.family = `"Inter","Noto Sans SC",system-ui`;
 Chart.defaults.plugins.legend.labels.usePointStyle = true;
 
-const G = (ctx, c1, c2)=>{ const g=ctx.createLinearGradient(0,0,0,320); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; };
+/** ========= 1. 五行条形图（星座） ========= **/
+const ctxZ = document.getElementById("barZodiac").getContext("2d");
+const gradZ = barGradient(ctxZ, "#7c9bff", "#3e63ff");
+new Chart(ctxZ,{
+  type:"bar",
+  data:{
+    labels: Object.keys(zodiacScores),
+    datasets:[{
+      label:"五行能量（象征）",
+      data: Object.values(zodiacScores),
+      backgroundColor: gradZ,
+      borderRadius: 10
+    }]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    scales:{
+      x:{ grid:{display:false}},
+      y:{ beginAtZero:true, max:100, ticks:{ stepSize:25 } }
+    }
+  }
+});
 
-/** ==================== 1. 五行条形图 ==================== **/
-{
-  const ctx = document.getElementById("barZodiac").getContext("2d");
-  new Chart(ctx,{ type:"bar",
-    data:{ labels:Object.keys(zodiacScores),
-      datasets:[{ label:"五行能量（象征）", data:Object.values(zodiacScores),
-        backgroundColor:G(ctx,"#7c9bff","#3e63ff"), borderRadius:10 }]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      scales:{ x:{grid:{display:false}}, y:{ beginAtZero:true, max:100, ticks:{ stepSize:25 } } }
-  });
-}
+/** ========= 2. 四液质（条形，自评为主；提示里显示环境路径） ========= **/
+const ctxT = document.getElementById("barTemperament").getContext("2d");
+const gradT = barGradient(ctxT, "#f6c453", "#f59f0b");
+new Chart(ctxT,{
+  type:"bar",
+  data:{
+    labels:Object.keys(temp_self),
+    datasets:[{
+      label:"四液质（自评→由80题大五映射）",
+      data:Object.values(temp_self),
+      backgroundColor: gradT,
+      borderRadius: 10
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ tooltip:{ callbacks:{
+      afterLabel:(ctx)=>`（环境路径：${temp_env[ctx.label] ?? "-"}%）`
+    }}},
+    scales:{ x:{grid:{display:false}}, y:{beginAtZero:true,max:100}}
+  }
+});
 
-/** ==================== 2. 四液质条形 + 徽章 ==================== **/
-{
-  const ctx = document.getElementById("barTemperament").getContext("2d");
-  new Chart(ctx,{ type:"bar",
-    data:{ labels:mixTemp.labels,
-      datasets:[{ label:"四液质（自评）", data:mixTemp.self,
-        backgroundColor:G(ctx,"#f6c453","#f59f0b"), borderRadius:10 }]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ tooltip:{ callbacks:{ afterLabel:(c)=>`（环境路径：${mixTemp.env[c.dataIndex] ?? "-"}%）` } }},
-      scales:{ x:{grid:{display:false}}, y:{ beginAtZero:true, max:100 } }
-  });
-  // 徽章
+// 四液质变化徽章：环境 - 自评
+(function renderTempBadges(){
   const box = document.getElementById('tempCompareBadge');
-  mixTemp.labels.forEach((k,i)=>{
-    const d = Math.round(mixTemp.env[i] - mixTemp.self[i]);
+  const keys = Object.keys(temp_self);
+  keys.forEach(k=>{
+    const a = temp_self[k]||0, b = temp_env[k]||0, d = Math.round(b-a);
     const span = document.createElement('span');
-    span.className = `badge ${d>0?'good':(d<0?'bad':'')}`;
+    const cls = d>0 ? 'good' : (d<0 ? 'bad':''); // 提升→good，下降→bad（仅用于显示）
+    span.className = `badge ${cls}`;
     span.textContent = `${k}  ${d>0?'+':''}${d}%`;
     box.appendChild(span);
   });
-}
+})();
 
-/** ==================== 3. 大五条形 + 徽章 ==================== **/
-{
-  const ctx = document.getElementById("barBig5").getContext("2d");
-  const names = ["开放性","尽责性","外向性","宜人性","神经质"];
-  new Chart(ctx,{ type:"bar",
-    data:{ labels:names,
-      datasets:[
-        {label:"自评", data:mixBig5.self, backgroundColor:G(ctx,"#61dbff","#22b8cf"), borderRadius:10},
-        {label:"环境", data:mixBig5.env,  backgroundColor:G(ctx,"#53e08c","#10b981"), borderRadius:10}
-      ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      scales:{ x:{grid:{display:false}}, y:{ beginAtZero:true, max:100 } }
-  });
+/** ========= 3. 大五（自评 vs 环境）条形 ========= **/
+const ctxB = document.getElementById("barBig5").getContext("2d");
+const gradB1 = barGradient(ctxB, "#61dbff", "#22b8cf");
+const gradB2 = barGradient(ctxB, "#53e08c", "#10b981");
+new Chart(ctxB,{
+  type:"bar",
+  data:{
+    labels:["开放性","尽责性","外向性","宜人性","情绪稳定"],
+    datasets:[
+      {label:"自评（80题）", data:[bf_self.O,bf_self.C,bf_self.E,bf_self.A,bf_self.ES], backgroundColor:gradB1, borderRadius:10},
+      {label:"环境（200标签+80纠偏）", data:[bf_env.O,bf_env.C,bf_env.E,bf_env.A,bf_env.ES],  backgroundColor:gradB2, borderRadius:10}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    scales:{ x:{grid:{display:false}}, y:{beginAtZero:true,max:100} }
+  }
+});
+
+// 大五变化徽章：环境 - 自评（情绪稳定上升是好事）
+(function renderBig5Badges(){
   const box = document.getElementById('big5DeltaBadge');
-  names.forEach((name,i)=>{
-    const d = Math.round(mixBig5.env[i] - mixBig5.self[i]);
-    let cls = d>0 ? 'good' : (d<0 ? (name==="神经质" ? 'good' : 'bad') : '');
-    if(name==="神经质" && d>0) cls='bad';
+  const names=["开放性","尽责性","外向性","宜人性","情绪稳定"];
+  const selfVals=[bf_self.O,bf_self.C,bf_self.E,bf_self.A,bf_self.ES];
+  const envVals =[bf_env.O,bf_env.C,bf_env.E,bf_env.A,bf_env.ES];
+  selfVals.forEach((v,i)=>{
+    const d = Math.round((envVals[i]||0) - (v||0));
+    const goodUp = (names[i]==="情绪稳定") ? (d>0) : (d>0); // 简化：上升为好；若用“神经质”则反向
+    const cls = d===0 ? '' : (goodUp ? 'good' : 'bad');
     const span = document.createElement('span');
     span.className = `badge ${cls}`;
-    span.textContent = `${name}  ${d>0?'+':''}${d}`;
+    span.textContent = `${names[i]}  ${d>0?'+':''}${d}`;
     box.appendChild(span);
   });
-}
+})();
 
-/** ==================== 4. 大五 & 四液质雷达 ==================== **/
-{
-  const ctx = document.getElementById("radarBig5").getContext("2d");
-  new Chart(ctx,{ type:"radar",
-    data:{ labels:["开放性","尽责性","外向性","宜人性","神经质"],
-      datasets:[
-        {label:"自评", data:mixBig5.self, backgroundColor:"rgba(124,155,255,.25)", borderColor:"#7c9bff", pointBackgroundColor:"#7c9bff"},
-        {label:"环境", data:mixBig5.env,  backgroundColor:"rgba(82,227,194,.25)",  borderColor:"#52e3c2", pointBackgroundColor:"#52e3c2"}
-      ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      scales:{ r:{ min:0, max:100, grid:{color:"rgba(255,255,255,.12)"}, angleLines:{color:"rgba(255,255,255,.12)"} } }
-  });
-}
-{
-  const ctx = document.getElementById("radarTemperament").getContext("2d");
-  new Chart(ctx,{ type:"radar",
-    data:{ labels:["多血质","胆汁质","抑郁质","粘液质"],
-      datasets:[
-        {label:"自评", data:mixTemp.self, backgroundColor:"rgba(245,159,11,.25)", borderColor:"#f59f0b", pointBackgroundColor:"#f59f0b"},
-        {label:"环境", data:mixTemp.env,  backgroundColor:"rgba(16,185,129,.25)",  borderColor:"#10b981", pointBackgroundColor:"#10b981"}
-      ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      scales:{ r:{ min:0, max:100, grid:{color:"rgba(255,255,255,.12)"}, angleLines:{color:"rgba(255,255,255,.12)"} } }
-  });
-}
-
-/** ==================== 5. 结构/生态/潜力 三环雷达（只读） ==================== **/
-{
-  const labels8 = ["镜面","筋骨","水流","火焰","指南针","盾牌","桥梁","岩石"];
-  const ctx = document.getElementById("radarSEP").getContext("2d");
-  const radialMax = 100;
-  const optBase = { min:0, max:radialMax, grid:{color:"rgba(255,255,255,.12)"}, angleLines:{color:"rgba(255,255,255,.12)"} };
-  new Chart(ctx,{ type:"radar",
-    data:{ labels:labels8,
-      datasets:[
-        {label:"结构（Struct）",  data:struct8_final, backgroundColor:"rgba(124,155,255,.18)", borderColor:"#7c9bff", pointBackgroundColor:"#7c9bff"},
-        {label:"生态（Eco·8）",   data:eco8_final,    backgroundColor:"rgba(82,227,194,.18)",  borderColor:"#52e3c2", pointBackgroundColor:"#52e3c2"},
-        {label:"潜力（Potential）", data:potential8,  backgroundColor:"rgba(245,159,11,.18)",  borderColor:"#f59f0b", pointBackgroundColor:"#f59f0b"}
-      ]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      scales:{ r: optBase },
-      plugins:{ legend:{ position:'top' } }
-  });
-
-  // 极端模式的显示增强（只影响显示）
-  if(extremeMode){
-    // 轻微γ校正：对高分段增强差异
-    const gamma = (x)=> Math.round( Math.pow(x/100, 1/1.2) * 100 );
-    ["Struct","Eco","Potential"];
-    // 这里只加一个视觉提示，不修改数据本身
-    const tag = document.createElement('div');
-    tag.className='badge warn'; tag.style.marginTop='8px';
-    tag.textContent='极端模式：显示已拉伸（不影响底层分数）';
-    document.querySelector('#radarSEP').closest('.card').appendChild(tag);
+/** ========= 4a. 大五雷达（自评 vs 环境） ========= **/
+const ctxRB = document.getElementById("radarBig5").getContext("2d");
+new Chart(ctxRB,{
+  type:"radar",
+  data:{
+    labels:["开放性","尽责性","外向性","宜人性","情绪稳定"],
+    datasets:[
+      {
+        label:"自评（80题）",
+        data:[bf_self.O,bf_self.C,bf_self.E,bf_self.A,bf_self.ES],
+        backgroundColor:"rgba(124,155,255,.25)",
+        borderColor:"#7c9bff",
+        pointBackgroundColor:"#7c9bff"
+      },
+      {
+        label:"环境（200标签+80纠偏）",
+        data:[bf_env.O,bf_env.C,bf_env.E,bf_env.A,bf_env.ES],
+        backgroundColor:"rgba(82,227,194,.25)",
+        borderColor:"#52e3c2",
+        pointBackgroundColor:"#52e3c2"
+      }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    scales:{ r:{ min:0, max:100, grid:{color:"rgba(255,255,255,.12)"}, angleLines:{color:"rgba(255,255,255,.12)"} } }
   }
-}
+});
 
-/** ==================== 下载 PNG（导出各图） ==================== **/
+/** ========= 4b. 四液质雷达（自评 vs 环境） ========= **/
+const ctxRT = document.getElementById("radarTemperament").getContext("2d");
+new Chart(ctxRT,{
+  type:"radar",
+  data:{
+    labels:Object.keys(temp_self),
+    datasets:[
+      {
+        label:"自评（由80题大五映射）",
+        data:Object.values(temp_self),
+        backgroundColor:"rgba(245,159,11,.25)",
+        borderColor:"#f59f0b",
+        pointBackgroundColor:"#f59f0b"
+      },
+      {
+        label:"环境（标签+纠偏映射）",
+        data:Object.values(temp_env),
+        backgroundColor:"rgba(16,185,129,.25)",
+        borderColor:"#10b981",
+        pointBackgroundColor:"#10b981"
+      }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    scales:{ r:{ min:0, max:100, grid:{color:"rgba(255,255,255,.12)"}, angleLines:{color:"rgba(255,255,255,.12)"} } }
+  }
+});
+
+/** ========= 下载 PNG ========= **/
 document.getElementById('btnDownload').addEventListener('click', ()=>{
   const figs = [
     ["zodiac-bar","barZodiac"],
     ["temperament-bar","barTemperament"],
     ["big5-bar","barBig5"],
-    ["sep-radar","radarSEP"],
     ["big5-radar","radarBig5"],
     ["temperament-radar","radarTemperament"]
   ];
@@ -394,8 +512,10 @@ document.getElementById('btnDownload').addEventListener('click', ()=>{
     const a = document.createElement('a'); a.href=url; a.download=`report-${name}.png`; a.click();
   });
 });
+</script>
 
-/** —— 保证导航可点 —— */
+<script>
+// 确保导航内的链接不被覆盖/拦截
 (function(){
   try{
     var nav = document.querySelector('.nav');
