@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard · 三圈+徽章+结构8规则（含A–J与所有维度高/中/低细分表述）</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3"></script>
+<style>
+:root{--bg:#0b1020;--card:#121833;--ink:#e7ecff;--muted:#98a1c0;--brand:#6c8cff;--line:#1c2447;--good:#4ade80;--warn:#f59f0b;--bad:#ff5c9a}
+*{box-sizing:border-box}html,body{margin:0;background:linear-gradient(180deg,#0b1020,#0e1430);color:var(--ink);font-family:'Noto Sans SC',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:1200px;margin:22px auto 80px;padding:14px}
+.h1{font-size:26px;font-weight:700;margin:6px 0 12px}
+.card{background:linear-gradient(180deg,#121833,#0f1733);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.row{display:grid;grid-template-columns: 1.2fr 1fr;gap:14px;align-items:start}
+.btn{padding:8px 14px;border-radius:8px;background:#6c8cff;color:#fff;margin-right:6px;text-decoration:none;border:1px solid #7a95ff;cursor:pointer}
+.tab{display:inline-block;padding:6px 10px;border:1px solid #2a3b7a;border-radius:10px;margin-right:6px;cursor:pointer}.tab.active{background:#1a244f;border-color:#5a76dd}
+.q{padding:10px;border:1px dashed #2a3b7a;border-radius:12px;background:#0c1433;margin:8px 0}
+.bar{position:relative;height:12px;width:100%;background:#0b1230;border:1px solid #2a3b7a;border-radius:999px;overflow:hidden;margin:6px 0 4px 0}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#6c8cff,#9aaeff)}
+.bar.alt1>i{background:linear-gradient(90deg,#10b981,#34d399)}
+.value{font-size:12px;color:#b9c4ff;display:block;text-align:right;margin-bottom:4px}
+.legend-note{font-size:12px;color:#9fb1ff;margin-left:8px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid #2a3b7a;font-size:11px;margin:2px 4px 2px 0}
+.badge.good{border-color:rgba(74,222,128,.5);color:#c8ffe0}
+.badge.warn{border-color:rgba(245,158,11,.55);color:#ffe7b8}
+.badge.bad{border-color:rgba(255,92,154,.55);color:#ffc9dc}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:#6c8cff;display:inline-block}
+.badge.good .dot{background:#10b981} .badge.warn .dot{background:#f59e0b} .badge.bad .dot{background:#ff5c9a}
+.tips{margin-top:6px;padding-left:14px}
+.tips li{font-size:12px;color:#d3dcff;line-height:1.5}
+.tips.collapsed li.extra{display:none}
+.tip-toggle{margin-top:6px;font-size:12px;color:#a8b7ff;cursor:pointer;user-select:none}
+.disclaimer{font-size:12px;color:#a5b3ff;margin-bottom:8px}
+.smallmuted{font-size:11px;color:#8ea0ff;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="h1">Dashboard · 三圈雷达（左） + 徽章/规则（右）</div>
+  <div class="row">
+    <div class="card">
+      <canvas id="radar" height="520"></canvas>
+      <div style="margin-top:10px">
+        <a class="btn" href="step1.html">Step1</a>
+        <a class="btn" href="step2.html">Step2</a>
+        <a class="btn" href="step3.html">Step3</a>
+        <a class="btn" href="report.html">Report</a>
+        <span class="legend-note">三环：结构(0–50) / 生态(50–100) / 潜力(100–150)</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="disclaimer">阈值口径统一：高≥70，中=50–65，低≤50。 注：含“长期情绪低落/耗竭倾向”的表述只是状态提醒，非医学诊断。</div>
+      <div style="margin-bottom:8px">
+        <span class="tab active" id="tab-struct">结构 8</span>
+        <span class="tab" id="tab-eco">生态 16</span>
+        <span class="tab" id="tab-pot">潜力 8</span>
+      </div>
+      <div id="panel-struct"><div id="structBadges"></div><div id="structList"></div></div>
+      <div id="panel-eco" style="display:none"><div id="ecoBadges"></div><div id="ecoList"></div></div>
+      <div id="panel-pot" style="display:none"><div id="potBadges"></div><div id="potList"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========= 数据与合并 =========
+const alpha = 0.65;
+const AXES_FULL = ["镜面（觉察）","筋骨（闭环力）","水流（灵活）","火焰（能量）","指南针（方向）","盾牌（情绪稳定）","桥梁（连接）","岩石（毅力）"];
+const AXES = AXES_FULL.map(s=>s.split('（')[0]);
+const ECO16 = ["信任速度","协作质量","关系韧性","影响半径","目标推进力","节奏管理","应变效率","落地闭环度","洞察敏锐度","表达条理度","信息整合度","改进驱动力","能量外放","冲突风格","环境贴合度","幸福感基础"];
+const ECO16_TO_AXIS = {"信任速度":7,"协作质量":6,"关系韧性":5,"影响半径":6,"目标推进力":3,"节奏管理":1,"应变效率":2,"落地闭环度":1,"洞察敏锐度":0,"表达条理度":2,"信息整合度":0,"改进驱动力":2,"能量外放":3,"冲突风格":5,"环境贴合度":6,"幸福感基础":4};
+
+function readArr(key, n=null){ try{ const v=JSON.parse(localStorage.getItem(key)||'null'); if(Array.isArray(v)&&(n==null||v.length===n)) return v; }catch(e){} return null; }
+function sample(n,seed){ let x=seed, arr=[]; for(let i=0;i<n;i++){ x=(x*9301+49297)%233280; arr.push(Math.round((x/233280)*100)); } return arr; }
+function clamp01(x){ return Math.max(0,Math.min(100,Number(x)||0)); }
+function ecology16FromStruct(S){
+  const v=i=>S[i]||50;
+  return [
+    (v(7)+v(6))/2, (v(6)+v(3)+v(4))/3, (v(5)+v(7))/2, (v(5)+v(6)+v(3))/3,
+    (v(3)+v(4)+v(1))/3, (v(1)+v(7)+v(4))/3, (v(2)+v(6))/2, (v(1)+v(3))/2,
+    (v(0)+v(2))/2, (v(2)+v(3))/2, (v(0)+v(1)+v(2))/3, (v(2)+v(6))/2,
+    (v(3)+v(5))/2, (v(5)+v(1)+v(2))/3, (v(6)+v(7)+v(1))/3, (v(4)+v(1)+v(0))/3
+  ].map(clamp01);
+}
+function expand8to16(arr8){ return ECO16.map(name => arr8[ECO16_TO_AXIS[name]] || 0); }
+
+// 来源：step1/step2/step3（如无则样本兜底）
+const s_self = readArr('step1_struct',8) || sample(8,11);
+const s2_raw = readArr('step2_struct_raw',8) || sample(8,37);
+const s3     = readArr('step3_struct',8) || sample(8,73);
+const e2_raw = readArr('step2_eco16_raw',16) || ecology16FromStruct(s2_raw);
+const e3     = readArr('step3_eco16',16) || ecology16FromStruct(s3);
+
+// 合并：标签60 + 纠偏80 → 环境（唯一）
+const s_tag  = s2_raw.map(v=>clamp01(60+v));
+const e_tag  = e2_raw.map(v=>clamp01(60+v));
+const s_env  = s_tag.map((v,i)=> Math.round(alpha*v + (1-alpha)*(s3[i]||0)));
+let   e_env  = e_tag.map((v,i)=> Math.round(alpha*v + (1-alpha)*(e3[i]||0)));
+if(!e_env.some(x=>x>0)) e_env = ecology16FromStruct(s_env);
+
+// ========= 三圈雷达 =========
+const toStructRing = v => v*0.5;
+const toEcoRing    = v => 50 + v*0.5;
+const toPotRing    = v => 100 + v*0.5;
+const datasets = [
+  {label:'结构 自评(80)', data: expand8to16(s_self).map(toStructRing), borderWidth:2, pointRadius:2, fill:false, borderColor:'#6c8cff'},
+  {label:'生态 自评(80)', data: ecology16FromStruct(s_self).map(toEcoRing),              borderWidth:2, pointRadius:2, fill:false, borderColor:'#10b981'},
+  {label:'潜力 自评(80)', data: expand8to16(sample(8,99)).map(toPotRing),  borderWidth:2, pointRadius:2, fill:false, borderColor:'#f59e0b'},
+  {label:'结构 环境(合并)', data: expand8to16(s_env).map(toStructRing), borderWidth:2, pointRadius:2, fill:false, borderColor:'#9aaeff'},
+  {label:'生态 环境(合并)', data: e_env.map(toEcoRing),               borderWidth:2, pointRadius:2, fill:false, borderColor:'#34d399'},
+  {label:'潜力 环境(合并)', data: expand8to16(sample(8,77)).map(toPotRing),  borderWidth:2, pointRadius:2, fill:false, borderColor:'#fbbf24'}
+];
+new Chart(document.getElementById('radar'),{ type:'radar', data:{ labels:ECO16, datasets }, options:{
+  responsive:true, plugins:{ legend:{position:'top',labels:{color:'#cdd6ff',usePointStyle:true}} },
+  scales:{ r:{min:0,max:150,ticks:{color:'#93a1e8'},grid:{color:'rgba(255,255,255,.1)'},angleLines:{color:'rgba(255,255,255,.15)'},pointLabels:{color:'#e6ebff',font:{size:12}}} }
+}});
+
+// ========= 公用函数 =========
+function band(v){ if(v>=70) return "高"; if(v<=50) return "低"; return "中"; }
+function bandKey(v){ return v>=70?'high':(v<=50?'low':'mid'); }
+function bandCls(v){ if(v>=70) return "good"; if(v<=50) return "bad"; return "warn"; }
+function badge(label, val){ return `<span class="badge ${bandCls(val)}"><i class="dot"></i>${label} ${val}（${band(val)}）</span>`; }
+function entropyFromE16(E16){
+  const 落地闭环度 = E16[7]||50;
+  const 节奏管理   = E16[5]||50;
+  const 环境贴合度 = E16[14]||50;
+  return Math.max(0, Math.min(100, 100 - (0.5*落地闭环度 + 0.3*节奏管理 + 0.2*环境贴合度)));
+}
+
+// ========= 维度高/中/低细分表述（全量） =========
+const BAND_TEXT = {
+  "镜面": {
+    high: [
+      "清晰拍板（指南针≥65 & 盾牌≥60）",
+      "清晰定向（与指南针共振，节奏顺畅）",
+      "清晰但起伏大（盾牌≤55）",
+      "看得清但目标摇摆（指南针≤55）",
+      "洞察-整合-表达协同（信息整合度/表达条理度↑）"
+    ],
+    mid: [
+      "觉察适中，受方向/稳态影响，必要时需外部锚点",
+      "细节捕捉尚可，但易被噪声牵引（熵增≥70）",
+      "建议阶段性校准目标口径（里程碑回看）"
+    ],
+    low: [
+      "易出现盲区，锚定弱；建议先收集关键信息再下判断",
+      "观点波动大（指南针≤55 或 熵增≥70）",
+      "需要结构化观察清单来稳定输入质量"
+    ]
+  },
+  "筋骨": {
+    high: [
+      "稳定高效（熵增≤50 & 水流≤50）",
+      "敏捷有边（水流≥66 & 熵增≤50）",
+      "刚性维稳（水流≤50 & 熵增≥70）",
+      "连续性高（与盾牌≥70 共振）",
+      "改动可承受（与水流≥66，连续性略降、韧性↑）"
+    ],
+    mid: [
+      "稳中求进（水流=50–65）",
+      "节律更可预期（适度降噪）",
+      "需要明确闭环检查点（避免返工）"
+    ],
+    low: [
+      "结构松散，落地难；优先补齐流程与检查表",
+      "执行波动大（熵增≥70）",
+      "建议建立节拍器/滚动复盘机制"
+    ]
+  },
+  "水流": {
+    high: [
+      "创变执行（火焰≥66 & 筋骨≥70）",
+      "弹性改进（筋骨=50–65 & 火焰=50–65）",
+      "思路在、势能不足（火焰≤55）",
+      "高噪声返工风险（熵增≥70）",
+      "遇变不崩（岩石≥70 & 熵增≤50）"
+    ],
+    mid: [
+      "弹性适中，需根据噪声水平调整节律",
+      "在低熵环境中更顺畅（熵增≤50）",
+      "与筋骨配合可加速试错的闭环"
+    ],
+    low: [
+      "刚性高，改动阻力大；先明确边界与风险",
+      "稳定推进但适应慢（筋骨≥70）",
+      "建议小步试错引入安全阀"
+    ]
+  },
+  "火焰": {
+    high: [
+      "强号召（盾牌≥60 & 桥梁≥65）",
+      "高能失控（盾牌≤50）",
+      "极化领导（桥梁≤50）",
+      "高能但能软着陆（桥梁≥65 & 盾牌≤50）",
+      "号召+凝聚（桥梁≥70 & 熵增≤50）"
+    ],
+    mid: [
+      "势能一般，需借助结构化推进（筋骨/指南针）",
+      "在凝聚度提升后可快速放大（桥梁↑）",
+      "建议优先聚焦关键战役，避免分散"
+    ],
+    low: [
+      "势能不足，优先能量管理与优先级收敛",
+      "高冷静但推进弱（盾牌≥75 & 火焰≤55）",
+      "通过里程碑拆解提升作战节奏"
+    ]
+  },
+  "指南针": {
+    high: [
+      "坚定且可协同（桥梁≥70 & 水流≤50）",
+      "善意协调但边界弹性增（水流≥66）",
+      "坚定但强硬（桥梁≤50 & 水流≤50）",
+      "一致对外（与岩石≥70）",
+      "清晰定向（与镜面≥72）"
+    ],
+    mid: [
+      "方向波动，建议阶段性复盘与里程碑锚定",
+      "与桥梁协同后更稳（沟通对齐）",
+      "在高熵环境下易摇摆（熵增≥70）"
+    ],
+    low: [
+      "锚定弱，易摇摆；先统一目标口径再推进",
+      "容易被短期刺激牵引（火焰↑、熵增↑）",
+      "需要外部原则清单与边界声明"
+    ]
+  },
+  "盾牌": {
+    high: [
+      "高冷静（火焰≤55 & 熵增≤50）",
+      "冷静转强势推进（火焰≥72）",
+      "“压抑”感（熵增≥70，效率下降，长期有耗竭/低落倾向）",
+      "稳定可靠（与筋骨≥70 节律清晰）"
+    ],
+    mid: [
+      "情绪波动可管理，注意节奏与复原机制",
+      "适合在中低噪声环境快速恢复",
+      "建议配置情绪缓冲/休复窗口"
+    ],
+    low: [
+      "起伏大、易打断；建立情绪缓冲与支持系统",
+      "摩擦增、连续性下降（筋骨受影响）",
+      "优先做节律与资源保护"
+    ]
+  },
+  "桥梁": {
+    high: [
+      "号召+凝聚（熵增≤50 & 火焰≥66）",
+      "动员强但协调成本飙升（熵增≥70）",
+      "坚定且易协同（与指南针≥70）",
+      "关系韧性↑（盾牌/岩石配合）"
+    ],
+    mid: [
+      "协作受上下文影响，建议明确权责边界",
+      "在低噪声时合作收益最大",
+      "与水流/指南针对齐后更顺"
+    ],
+    low: [
+      "冷硬推进（熵增≥70 & 火焰≥66）",
+      "强势但可控（熵增≤50 & 火焰≥66）",
+      "摩擦高、分化；先做对齐与冲突降级"
+    ]
+  },
+  "岩石": {
+    high: [
+      "硬扛但恢复慢（熵增≥70 & 水流≤50）",
+      "硬扛并能转圜，恢复一般（熵增≥70 & 水流=50–65）",
+      "硬扛且具韧性，恢复较快，但长期有耗竭/情绪低落倾向（熵增≥70 & 水流≥66）",
+      "持久稳推（熵增≤40 & 水流≤50）",
+      "持久且敏捷（熵增≤40 & 水流≥66）",
+      "遇变不崩（水流≥66 & 熵增≤50）",
+      "顶得住但返工变多（水流≥66 & 熵增≥70）",
+      "坚定有边界但协作摩擦（与指南针≥70 & 桥梁≤50）",
+      "一致对外（桥梁≥70）"
+    ],
+    mid: [
+      "抗压中性，易受噪声或协作环境影响，表现可上可下",
+      "建议配合节律管理与能量补给",
+      "在低噪声环境下展现出持续推进力"
+    ],
+    low: [
+      "原则仍在但执行弹性增（岩石≤55，且 指南针≥70 & 桥梁≤50）",
+      "韧性不足；建议缩短冲刺周期增加复原窗口",
+      "先做小闭环来积累恢复力"
+    ]
+  }
+};
+
+// ========= A–J 组合规则（与 BAND_TEXT 一起输出） =========
+function comboRulesByAxis(S8, E16){
+  const [镜面,筋骨,水流,火焰,指南针,盾牌,桥梁,岩石] = S8;
+  const 熵增 = entropyFromE16(E16);
+  const out = Array(8).fill(0).map(()=>[]);
+  const push = (axes, text) => { axes.forEach(i=> { if(!out[i].includes(text)) out[i].push(text); }); };
+  const GE=(v,t)=>v>=t, LE=(v,t)=>v<=t, BT=(v,a,b)=>v>=a&&v<=b;
+
+  // A. 岩石×熵增×水流
+  if(GE(岩石,70)&&GE(熵增,70)&&LE(水流,50)) push([7,2], "硬扛但恢复慢");
+  if(GE(岩石,70)&&GE(熵增,70)&&BT(水流,50,65)) push([7,2], "硬扛并能转圜，恢复一般（高熵下能量消耗大）");
+  if(GE(岩石,70)&&GE(熵增,70)&&GE(水流,66)) push([7,2], "硬扛且具韧性，恢复较快，但长期有耗竭/情绪低落倾向（高强度+高噪声）");
+  if(GE(岩石,70)&&LE(熵增,40)&&LE(水流,50)) push([7,2], "持久稳推");
+  if(GE(岩石,70)&&LE(熵增,40)&&GE(水流,66)) push([7,2], "持久且敏捷（低噪声下改动可控）");
+  if(GE(岩石,70)&&GE(水流,66)&&LE(熵增,50)) push([7,2], "遇变不崩");
+  if(GE(岩石,70)&&GE(水流,66)&&GE(熵增,70)) push([7,2], "顶得住但返工变多（韧性还在，效率下滑）");
+
+  // B. 火焰×盾牌×桥梁
+  if(GE(火焰,72)&&LE(盾牌,50)&&LE(桥梁,50)) push([3,5,6], "反应性攻击");
+  if(GE(火焰,72)&&GE(盾牌,60)&&GE(桥梁,65)) push([3,5,6], "强号召");
+  if(GE(火焰,72)&&GE(盾牌,60)&&LE(桥梁,50)) push([3,6], "极化领导（阵营分化）");
+  if(GE(火焰,72)&&LE(盾牌,50)&&GE(桥梁,65)) push([3,5,6], "高能但能软着陆（对人锋利感下降）");
+  if(GE(火焰,72)&&LE(盾牌,50)) push([3,5], "高能失控（长期摩擦增）");
+  if(GE(火焰,72)&&GE(盾牌,60)) push([3,5], "高能但不失控（冲突降级）");
+
+  // C. 筋骨×水流×熵增
+  if(GE(筋骨,70)&&GE(水流,66)&&LE(熵增,50)) push([1,2], "敏捷有边");
+  if(GE(筋骨,70)&&GE(水流,66)&&GE(熵增,70)) push([1,2], "快变但返工风险（质量波动）");
+  if(GE(筋骨,70)&&LE(水流,50)&&GE(熵增,70)) push([1,2], "刚性维稳");
+  if(GE(筋骨,70)&&LE(水流,50)&&LE(熵增,50)) push([1,2], "稳定高效（成本下降）");
+  if(GE(筋骨,70)&&BT(水流,50,65)) push([1,2], "稳中求进（节律更可预期）");
+  if(GE(筋骨,70)&&GE(水流,66)&&LE(熵增,50)) push([1,2], "改动可承受（连续性略降、韧性提升）");
+
+  // D. 镜面×指南针×盾牌
+  if(GE(镜面,72)&&GE(指南针,65)&&GE(盾牌,60)) push([0,4,5], "清晰拍板");
+  if(GE(镜面,72)&&LE(指南针,55)&&GE(盾牌,60)) push([0,4], "分析多但锚定弱");
+  if(GE(镜面,72)&&GE(指南针,65)&&LE(盾牌,55)) push([0,5], "清晰但起伏大（情绪消耗高）");
+  if(GE(镜面,72)&&LE(指南针,55)) push([0,4], "看得清但目标摇摆（决策阻抗）");
+  if(GE(镜面,72)&&GE(指南针,65)) push([0,4], "清晰定向（节奏顺畅）");
+
+  // E. 指南针×桥梁×水流
+  if(GE(指南针,70)&&GE(桥梁,70)&&LE(水流,50)) push([4,6,2], "坚定且可协同");
+  if(GE(指南针,70)&&GE(桥梁,70)&&GE(水流,66)) push([4,6,2], "善意协调但边界弹性增（需外部锚定）");
+  if(GE(指南针,70)&&LE(桥梁,50)&&LE(水流,50)) push([4,6,2], "坚定但强硬");
+  if(GE(指南针,70)&&GE(桥梁,70)) push([4,6], "坚定且易协同（摩擦下降）");
+
+  // F. 水流×火焰×筋骨
+  if(GE(水流,70)&&GE(火焰,66)&&GE(筋骨,70)) push([2,3,1], "创变执行");
+  if(GE(水流,70)&&LE(筋骨,55)) push([2,1], "创意多但落地难");
+  if(GE(水流,70)&&BT(筋骨,50,65)&&BT(火焰,50,65)) push([2,1,3], "弹性改进");
+  if(GE(水流,70)&&LE(火焰,55)) push([2,3], "思路在、势能不足（节奏变慢）");
+  if(BT(筋骨,50,65)&&BT(火焰,50,65)&&LE(水流,50)) push([1,3,2], "稳中求进（试错减少）");
+
+  // G. 筋骨×盾牌×水流
+  if(GE(筋骨,70)&&GE(盾牌,70)&&LE(水流,50)) push([1,5,2], "高连续性");
+  if(GE(筋骨,70)&&GE(盾牌,70)&&GE(水流,66)) push([1,5,2], "连续性略降但韧性提升（变更可承受）");
+  if(GE(筋骨,70)&&LE(盾牌,55)&&LE(水流,50)) push([1,5,2], "规则在但情绪打断");
+  if(GE(筋骨,70)&&GE(盾牌,70)) push([1,5], "稳定可靠（节律清晰）");
+
+  // H. 桥梁×熵增×火焰
+  if(GE(桥梁,70)&&LE(熵增,50)&&GE(火焰,66)) push([6,3], "号召+凝聚");
+  if(GE(桥梁,70)&&GE(熵增,70)&&GE(火焰,66)) push([6,3], "动员强但会议/协调成本飙升（凝聚力受噪声拖累）");
+  if(LE(桥梁,50)&&GE(熵增,70)&&GE(火焰,66)) push([6,3], "冷硬推进");
+  if(LE(桥梁,50)&&LE(熵增,50)&&GE(火焰,66)) push([6,3], "强势但可控（摩擦明显下降）");
+
+  // I. 指南针×岩石×桥梁
+  if(GE(指南针,70)&&GE(岩石,70)&&LE(桥梁,50)) push([4,7,6], "坚定有边界但协作摩擦");
+  if(GE(指南针,70)&&GE(岩石,70)&&GE(桥梁,70)) push([4,7,6], "一致对外（凝聚提升）");
+  if(GE(指南针,70)&&LE(岩石,55)) push([4,7], "原则仍在但执行弹性增");
+
+  // J. 盾牌×火焰×熵增
+  if(GE(盾牌,75)&&LE(火焰,55)&&LE(熵增,50)) push([5,3], "高冷静");
+  if(GE(盾牌,75)&&GE(火焰,72)) push([5,3], "冷静转强势推进（冲突风险上扬）");
+  if(GE(盾牌,75)&&GE(熵增,70)) push([5], "冷静变“压抑”感（效率下降，长期有耗竭/低落倾向）");
+
+  return out;
+}
+
+// 使用“环境口径”计算每轴要展示的表述（通用表述 + 命中规则；默认展示2条）
+function statementsForAxis(i, S8, E16){
+  const axis = AXES[i];
+  const v = S8[i]||0;
+  const bk = bandKey(v);
+  const general = BAND_TEXT[axis] ? (BAND_TEXT[axis][bk]||[]) : [];
+  const combo = comboRulesByAxis(S8, E16)[i] || [];
+  const seen = new Set();
+  const merged = [];
+  [...general, ...combo].forEach(t=>{ if(t && !seen.has(t)){ seen.add(t); merged.push(t);} });
+  return merged;
+}
+
+// ========= 组件 =========
+function badgeWithTipsCollapsible(label, val, tips, rowId){
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center">
+    <b>${label}</b><div>${badge('环境', val)}</div></div>`;
+  if(tips && tips.length){
+    const first = tips.slice(0,2);
+    const rest = tips.slice(2);
+    const items1 = first.map(t=> `<li>${t}</li>`).join('');
+    const items2 = rest.map(t=> `<li class="extra">${t}</li>`).join('');
+    const cls = rest.length ? 'tips collapsed' : 'tips';
+    const btn = rest.length ? `<div class="tip-toggle" data-target="tips-${rowId}">展开更多 ▾</div>` : '';
+    html += `<ul id="tips-${rowId}" class="${cls}">${items1}${items2}</ul>${btn}`;
+  }
+  return html;
+}
+function barRow(label, v1, v2, tips, idx, collapsible=false){
+  const header = collapsible ? badgeWithTipsCollapsible(label, v2, tips||[], idx) : (
+    `<div style="display:flex;justify-content:space-between;align-items:center">
+      <b>${label}</b><div>${badge('环境', v2)}</div></div>`
+  );
+  return `
+  <div class='q'>
+    ${header}
+    <div class='bar'><i style='width:${(v1||0).toFixed(0)}%'></i></div><span class='value'>自评（80）：${(v1||0).toFixed(1)}</span>
+    <div class='bar alt1'><i style='width:${(v2||0).toFixed(0)}%'></i></div><span class='value'>环境（标签60+纠偏80 合并）：${(v2||0).toFixed(1)}</span>
+  </div>`;
+}
+
+// ========= 渲染 =========
+// 结构 8（徽章 + 规则折叠）
+document.getElementById('structList').innerHTML = AXES_FULL.map((full,i)=> {
+  const tips = statementsForAxis(i, s_env, e_env);
+  return barRow(full, s_self[i], s_env[i], tips, i, true);
+}).join('');
+document.getElementById('structBadges').innerHTML = s_env.map((v,i)=> badge(AXES[i], v)).join('');
+
+// 生态 16（徽章，无规则）
+document.getElementById('ecoList').innerHTML = ECO16.map((name,i)=> {
+  const selfVal = ecology16FromStruct(s_self)[i];
+  return barRow(`${i+1}. ${name}`, selfVal, e_env[i], null, 100+i, false);
+}).join('');
+document.getElementById('ecoBadges').innerHTML = e_env.map((v,i)=> badge(ECO16[i], v)).join('');
+
+// 潜力 8（徽章，无规则；如需你的原口径可替换）
+const POT_NAMES = ["创新潜力","领导潜力","艺术潜力","学习潜力","社交潜力","创业潜力","科研潜力","幸福潜力"];
+const pot_self = sample(8,201); // TODO: 用你的潜力计算逻辑替换
+const pot_env  = sample(8,333);
+document.getElementById('potList').innerHTML = POT_NAMES.map((n,i)=> barRow(`${i+1}. ${n}`, pot_self[i], pot_env[i], null, 200+i, false)).join('');
+document.getElementById('potBadges').innerHTML = pot_env.map((v,i)=> badge(POT_NAMES[i], v)).join('');
+
+// ========= 交互：Tab + 折叠 =========
+function activate(id){
+  ['tab-struct','tab-eco','tab-pot'].forEach(t=>document.getElementById(t).classList.remove('active'));
+  ['panel-struct','panel-eco','panel-pot'].forEach(p=>document.getElementById(p).style.display='none');
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('panel-'+id).style.display='block';
+}
+document.getElementById('tab-struct').onclick=()=>activate('struct');
+document.getElementById('tab-eco').onclick=()=>activate('eco');
+document.getElementById('tab-pot').onclick=()=>activate('pot');
+
+document.addEventListener('click', function(e){
+  const t = e.target.closest('.tip-toggle');
+  if(!t) return;
+  const id = t.getAttribute('data-target');
+  const ul = document.getElementById(id);
+  if(!ul) return;
+  const collapsed = ul.classList.contains('collapsed');
+  if(collapsed){ ul.classList.remove('collapsed'); t.textContent = '收起 ▴'; }
+  else{ ul.classList.add('collapsed'); t.textContent = '展开更多 ▾'; }
+});
+</script>
+</body>
+</html>
