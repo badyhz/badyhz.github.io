@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>思想启迪录</title>
+    <!-- 引入外部库 html2canvas 用于将HTML元素生成为图片 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" xintegrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoVBL5gI9kLmbG4dGxcIIKupRTVE5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        /* 引入思源宋体作为主要字体，增强复古和庄重感 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Noto Serif SC', serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #FDF6E3; /* 复古护眼米黄色背景 */
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+        }
+
+        /* 主容器，采用flex布局实现垂直和水平居中 */
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* 用于隐藏/显示的辅助类 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 初始界面样式 */
+        .intro-screen {
+            text-align: center;
+            color: #581818; /* 暗红色，有年代感 */
+        }
+        .intro-screen h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .intro-screen p {
+            font-size: 1.1em;
+            color: #7a3a3a;
+            margin-bottom: 50px;
+        }
+        .draw-button {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            background-color: #C82A2A; /* 经典的红色 */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .draw-button:hover {
+            background-color: #A02020;
+            transform: translateY(-3px); /* 悬停时轻微上浮 */
+        }
+        .draw-button:active {
+            transform: translateY(1px); /* 点击时下沉效果 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 结果展示页样式 */
+        .result-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+        
+        /* 卡片淡入动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* 卡片本身的设计 */
+        #card {
+            width: 90vw;
+            max-width: 400px;
+            aspect-ratio: 3 / 4.5;
+            background-color: #FBF0D6; /* 更有质感的纸张颜色 */
+            border: 2px solid #581818;
+            padding: 30px 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: justify;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-radius: 4px; /* 轻微的圆角 */
+        }
+
+        /* 左上角的红色五角星装饰 */
+        #card::before {
+            content: '★';
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-size: 24px;
+            color: #C82A2A;
+        }
+
+        /* 语录文本 */
+        #quote-text {
+            font-size: clamp(1.2em, 4.5vw, 1.5em); /* 响应式字体 */
+            line-height: 1.8;
+            color: #333;
+            font-weight: 700;
+            text-indent: 2em; /* 首行缩进，符合中文阅读习惯 */
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* 语录出处 */
+        #quote-source {
+            font-size: clamp(0.8em, 2.5vw, 0.9em);
+            color: #555;
+            align-self: flex-end; /* 右对齐 */
+            margin-top: 20px;
+            font-weight: 400;
+        }
+
+        /* 结果页的按钮组 */
+        .action-buttons {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px; /* 按钮间距 */
+        }
+        .action-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        .save-btn {
+            background-color: #C82A2A;
+            color: white;
+            border: 2px solid #C82A2A;
+        }
+        .again-btn {
+            background-color: transparent;
+            color: #C82A2A;
+            border: 2px solid #C82A2A;
+        }
+        .save-btn:hover {
+             background-color: #A02020;
+             border-color: #A02020;
+        }
+        .again-btn:hover {
+            background-color: rgba(200, 42, 42, 0.1);
+        }
+
+        /* 生成图片时的加载提示 */
+        #loader {
+            font-size: 1.2em;
+            color: #581818;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+
+        <!-- 初始屏幕 -->
+        <div class="intro-screen" id="intro-screen">
+            <h1>思想启迪录</h1>
+            <p>心中默念一事，然后获取启示</p>
+            <button class="draw-button" id="draw-btn">开始抽卡</button>
+        </div>
+
+        <!-- 结果屏幕 -->
+        <div class="result-screen hidden" id="result-screen">
+            <!-- 这是将要被转换成图片的卡片区域 -->
+            <div id="card">
+                <p id="quote-text"></p>
+                <p id="quote-source"></p>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-button save-btn" id="save-btn">保存卡片</button>
+                <button class="action-button again-btn" id="again-btn">再抽一次</button>
+            </div>
+        </div>
+
+        <!-- 加载提示 -->
+        <div id="loader" class="hidden">正在生成图片...</div>
+
+    </div>
+
+    <script>
+        // 语录数据库 (可在此处无限扩充)
+        const quotes = [
+            { text: "下定决心，不怕牺牲，排除万难，去争取胜利。", source: "《愚公移山》" },
+            { text: "情况是在不断地变化，要使自己的思想适应新的情况，就得学习。", source: "《在中国共产党全国宣传工作会议上的讲话》" },
+            { text: "我们不但要提出任务，而且要解决完成任务的方法问题。我们的任务是过河，但是没有桥或没有船就不能过。不解决桥或船的问题，过河就是一句空话。", source: "《关心群众生活，注意工作方法》" },
+            { text: "调查就象“十月怀胎”，解决问题就象“一朝分娩”。调查就是解决问题。", source: "《反对本本主义》" },
+            { text: "世界上怕就怕“认真”二字，共产党就最讲“认真”。", source: "《在扩大的中央工作会议上的讲话》" },
+            { text: "战略上要藐视一切敌人，战术上要重视一切敌人。", source: "《一切反动派都是纸老虎》" },
+            { text: "没有调查，就没有发言权。", source: "《反对本本主义》" },
+            { text: "你对于那个问题不能解决吗？那末，你就去调查那个问题的现状和它的历史吧！你完完全全调查明白了，你对那个问题就有解决的办法了。", source: "《反对本本主义》" },
+            { text: "让人说话，天不会塌下来。", source: "《关于正确处理人民内部矛盾的问题》" },
+            { text: "做一件工作，做得好不好，取决于我们能否真正地了解情况，我们的方针、政策、办法是否符合于实际。", source: "《在晋绥干部会议上的讲话》" },
+            { text: "星星之火，可以燎原。", source: "《星星之火，可以燎原》" },
+            { text: "我们大家要学习他毫无自私自利之心的精神。从这点出发，就可以变为大有利于人民的人。", source: "《纪念白求恩》" },
+            { text: "学习的敌人是自己的满足，要认真学习一点东西，必须从不自满开始。", source: "《中国共产党在民族战争中的地位》" },
+            { text: "实践、认识、再实践、再认识，这种形式，循环往复以至无穷，而实践和认识之每一循环的内容，都比较地进到了高一级的程度。", source: "《实践论》" },
+            { text: "一切结论产生于调查情况的末尾，而不是在它的先头。", source: "《反对本本主义》" }
+        ];
+
+        // 获取所有需要操作的DOM元素
+        const introScreen = document.getElementById('intro-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const cardElement = document.getElementById('card');
+        const quoteTextElement = document.getElementById('quote-text');
+        const quoteSourceElement = document.getElementById('quote-source');
+        const drawBtn = document.getElementById('draw-btn');
+        const againBtn = document.getElementById('again-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const loader = document.getElementById('loader');
+        const mainContainer = document.getElementById('main-container');
+
+        let lastQuoteIndex = -1; // 记录上一次抽到的语录索引，避免连续重复
+
+        // 核心的抽卡函数
+        function drawCard() {
+            // 添加一个短暂的过场动画，模拟洗牌/思考
+            mainContainer.style.opacity = '0';
+
+            setTimeout(() => {
+                let randomIndex;
+                // 确保这次抽到的和上次不一样（如果语录库大于1条）
+                if (quotes.length > 1) {
+                    do {
+                        randomIndex = Math.floor(Math.random() * quotes.length);
+                    } while (randomIndex === lastQuoteIndex);
+                } else {
+                    randomIndex = 0;
+                }
+                
+                lastQuoteIndex = randomIndex;
+                const selectedQuote = quotes[randomIndex];
+
+                // 将选中的语录填充到卡片中
+                quoteTextElement.textContent = selectedQuote.text;
+                quoteSourceElement.textContent = `—— ${selectedQuote.source}`;
+
+                // 切换界面显示：隐藏初始界面，显示结果卡片
+                introScreen.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+                loader.classList.add('hidden'); // 确保加载提示是隐藏的
+                
+                mainContainer.style.opacity = '1';
+            }, 400); // 400毫秒的淡出淡入动画时间
+        }
+
+        // 保存卡片为图片函数
+        function saveCardAsImage() {
+            // 显示加载提示，隐藏主容器
+            loader.classList.remove('hidden');
+            mainContainer.classList.add('hidden');
+
+            // 使用html2canvas库来“截图”卡片DOM元素
+            html2canvas(cardElement, {
+                useCORS: true, // 允许加载跨域资源（如果卡片里有网络图片）
+                scale: window.devicePixelRatio * 2, // 提高截图清晰度，2倍于设备像素比
+                backgroundColor: null, // 使用DOM元素的背景色
+            }).then(canvas => {
+                // 创建一个临时的<a>标签，用于触发浏览器下载功能
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png'); // 将canvas内容转为PNG格式的Data URL
+                link.download = '思想启迪录-卡片.png'; // 设置下载文件的默认名称
+                
+                // 模拟用户点击该链接
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link); // 下载后移除临时链接
+
+                // 恢复界面显示
+                loader.classList.add('hidden');
+                mainContainer.classList.remove('hidden');
+            }).catch(err => {
+                console.error('图片生成失败!', err);
+                alert('抱歉，图片生成失败，请稍后重试。');
+                // 即使失败也要恢复界面
+                loader.classList.add('hidden');
+                mainContainer.classList.remove('hidden');
+            });
+        }
+        
+        // “再抽一次”按钮的逻辑
+        function drawAgain() {
+            mainContainer.style.opacity = '0';
+            setTimeout(() => {
+                drawCard();
+            }, 400);
+        }
+
+        // 为所有按钮绑定点击事件
+        drawBtn.addEventListener('click', drawCard);
+        againBtn.addEventListener('click', drawAgain);
+        saveBtn.addEventListener('click', saveCardAsImage);
+
+    </script>
+</body>
+</html>
